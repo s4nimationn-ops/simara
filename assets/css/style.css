@@ -1,0 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+body { font-family: 'Poppins', sans-serif; background:#f8fafc; }
+.hero { background: linear-gradient(135deg,#3b82f6,#06b6d4); color:#fff; padding:140px 0 100px; text-align:center; }
+.navbar-brand.text-primary { color:#2563eb !important; }
+.card { border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.06); border:none; }
+.btn-primary { background:#3b82f6; border-color:#3b82f6; }
+footer { background:#0f172a; color:#cbd5e1; padding:20px 0; }
