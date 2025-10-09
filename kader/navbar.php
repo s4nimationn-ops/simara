@@ -7,7 +7,7 @@
       <li class="nav-item"><a class="nav-link" href="dashboard.php">Dashboard</a></li>
       <li class="nav-item"><a class="nav-link" href="input_antropometri.php">Antropometri</a></li>
       <li class="nav-item"><a class="nav-link" href="input_screening.php">Screening</a></li>
-      <li class="nav-item"><a class="nav-link btn btn-outline-light ms-2" href="/logout.php">Logout</a></li>
+      <li class="nav-item"><a class="nav-link btn btn-outline-light ms-2" href="logout.php">Logout</a></li>
     </ul>
   </div>
  </div>
