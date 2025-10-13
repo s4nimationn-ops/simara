@@ -72,10 +72,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       padding: 10px;
       border-radius: 8px;
     }
-    button.btn-primary {
-      padding: 10px 20px;
-      border-radius: 8px;
-      font-weight: 600;
+    .btn-primary {
+      background-color: #007bff;
+      border: none;
+    }
+    .btn-primary:hover {
+      background-color: #0056b3;
     }
   </style>
 </head>
@@ -110,7 +112,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <label class="form-label">Lingkar Lengan (cm)</label>
           <input name="lingkar" type="number" step="0.1" class="form-control" required>
         </div>
-        <button class="btn btn-primary w-100">Simpan</button>
+        <button class="btn btn-primary">Simpan</button>
+        <a class="btn btn-secondary" href="dashboard.php">Kembali</a>
       </form>
     </div>
   </div>

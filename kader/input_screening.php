@@ -99,7 +99,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <label class="form-label">Hemoglobin (g/dL)</label>
         <input name="hemoglobin" type="number" step="0.1" class="form-control" placeholder="Contoh: 13.5">
       </div>
-      <button class="btn btn-primary w-100 mt-2">Simpan</button>
+      <button class="btn btn-primary">Simpan</button>
+      <a class="btn btn-secondary" href="dashboard.php">Kembali</a>
     </form>
   </div>
 </div>

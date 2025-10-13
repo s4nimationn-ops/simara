@@ -32,7 +32,7 @@ $aktiv = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM data_aktivitas WH
         <h6>Indeks Massa Tubuh</h6>
         <h3><?= $imt ? number_format($imt['hasil_imt'],2) : '-' ?></h3>
         <p class="text-muted"><?= $imt['status_imt'] ?? 'Belum diisi' ?></p>
-        <a class="btn btn-outline-primary" href="input_imt.php">Isi / Lihat</a>
+        <a class="btn btn-outline-primary" href="input_imt.php">Isi</a>
       </div>
     </div>
 
@@ -41,7 +41,7 @@ $aktiv = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM data_aktivitas WH
         <h6>Pola Makan</h6>
         <p class="text-muted">Sarapan: <?= $pola['sarapan_per_minggu'] ?? '-' ?>x/mgg</p>
         <p class="text-muted">Buah & Sayur: <?= $pola['buah_sayur_per_minggu'] ?? '-' ?>x/mgg</p>
-        <a class="btn btn-outline-primary" href="input_pola_makan.php">Isi / Lihat</a>
+        <a class="btn btn-outline-primary" href="input_pola_makan.php">Isi</a>
       </div>
     </div>
 
@@ -50,7 +50,7 @@ $aktiv = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM data_aktivitas WH
         <h6>Aktivitas Olahraga</h6>
         <p class="text-muted">Olahraga per minggu: <?= $aktiv['olahraga_per_minggu'] ?? '-' ?>x</p>
         <p class="text-muted">Jam gadget/hari: <?= $aktiv['gadget_jam_per_hari'] ?? '-' ?> jam</p>
-        <a class="btn btn-outline-primary" href="input_aktivitas.php">Isi / Lihat</a>
+        <a class="btn btn-outline-primary" href="input_aktivitas.php">Isi</a>
       </div>
     </div>
   </div>
