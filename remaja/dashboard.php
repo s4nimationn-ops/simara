@@ -25,6 +25,29 @@ $q_aktivitas = mysqli_query($conn, "SELECT * FROM data_aktivitas WHERE user_id='
 $aktivitas = mysqli_fetch_assoc($q_aktivitas);
 $olahraga = $aktivitas['olahraga_per_minggu'] ?? '-';
 $gadget = $aktivitas['gadget_jam_per_hari'] ?? '-';
+
+// ambil tanggal pemberian TTD terakhir dari tabel pemberian_suplemen
+$q_ttd = mysqli_query($conn, "
+  SELECT tanggal_pemberian 
+  FROM pemberian_suplemen 
+  WHERE user_id = '$user_id' AND tablet_tambah_darah = 1 
+  ORDER BY tanggal_pemberian DESC 
+  LIMIT 1
+");
+
+$ttd = mysqli_fetch_assoc($q_ttd);
+$terakhir_ttd = $ttd ? new DateTime($ttd['tanggal_pemberian']) : null;
+$hari_ini = new DateTime();
+if ($terakhir_ttd) {
+    // 🧪 SIMULASI: anggap terakhir minum TTD sudah 8 hari lalu
+    $terakhir_ttd->modify('-8 days');
+}
+$selisih_hari = null;
+
+if ($terakhir_ttd) {
+  $selisih_hari = $hari_ini->diff($terakhir_ttd)->days;
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -87,7 +110,7 @@ body {
     <a class="navbar-brand fw-bold text-primary" href="#">SIMARA</a>
     <div class="ms-auto d-flex align-items-center gap-3">
       <span class="fw-semibold"><?= htmlspecialchars($nama); ?></span>
-      <a href="../logout.php" class="text-danger text-decoration-none">Logout</a>
+      <a href="logout.php" class="text-danger text-decoration-none">Logout</a>
     </div>
   </div>
 </nav>
@@ -99,6 +122,22 @@ body {
     <p class="mb-0">Berikut ringkasan kesehatan terakhirmu</p>
   </div>
 </div>
+
+<?php if (!$terakhir_ttd || $selisih_hari >= 7): ?>
+<div class="container mt-4">
+  <div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert">
+    <div class="d-flex align-items-center">
+      <i class="bi bi-capsule me-2 fs-5"></i>
+      <div>
+        <strong>Pengingat:</strong> Sudah <?= $selisih_hari ?? 'beberapa'; ?> hari sejak terakhir minum <strong>Tablet Tambah Darah</strong>.<br>
+        Jangan lupa diminum hari ini ya! 💊
+      </div>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+</div>
+<?php endif; ?>
+
 
 <!-- Content -->
 <div class="container mt-4">

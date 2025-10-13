@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Waktu pembuatan: 09 Okt 2025 pada 09.34
+-- Waktu pembuatan: 13 Okt 2025 pada 05.23
 -- Versi server: 10.4.32-MariaDB
 -- Versi PHP: 8.0.30
 
@@ -20,6 +20,19 @@ SET time_zone = "+00:00";
 --
 -- Database: `simara_db`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `artikel`
+--
+
+CREATE TABLE `artikel` (
+  `id` int(11) NOT NULL,
+  `judul` varchar(255) NOT NULL,
+  `konten` text NOT NULL,
+  `tanggal` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -116,6 +129,19 @@ INSERT INTO `pemeriksaan_kader` (`id`, `user_id`, `kader_id`, `tinggi_cm`, `bera
 -- --------------------------------------------------------
 
 --
+-- Struktur dari tabel `poster`
+--
+
+CREATE TABLE `poster` (
+  `id` int(11) NOT NULL,
+  `judul` varchar(255) NOT NULL,
+  `file_gambar` varchar(255) NOT NULL,
+  `tanggal` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Struktur dari tabel `users`
 --
 
@@ -143,9 +169,28 @@ INSERT INTO `users` (`id`, `nama`, `no_hp`, `email`, `password`, `role`, `create
 (15, 'rahmat', '08992172155', 'rahmat456@gmail.com', '$2y$10$5hW1Brn3OLQS36Ibm6wBb.gBAy6oOTIJ8brjNr7CjGHUhfrP8.L7y', 'kader', '2025-10-09 04:07:31'),
 (18, 'under pret', '', 'prettt123@gmail.com', '$2y$10$sm..gXEpm1pHlMiITUIfY.ib8.hBc8YeLJl/K.n7ZUtBiyAjVbqw2', 'remaja', '2025-10-09 07:17:45');
 
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `video`
+--
+
+CREATE TABLE `video` (
+  `id` int(11) NOT NULL,
+  `judul` varchar(255) NOT NULL,
+  `url_video` varchar(255) NOT NULL,
+  `tanggal` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 --
 -- Indexes for dumped tables
 --
+
+--
+-- Indeks untuk tabel `artikel`
+--
+ALTER TABLE `artikel`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indeks untuk tabel `data_aktivitas`
@@ -177,6 +222,12 @@ ALTER TABLE `pemeriksaan_kader`
   ADD KEY `kader_id` (`kader_id`);
 
 --
+-- Indeks untuk tabel `poster`
+--
+ALTER TABLE `poster`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indeks untuk tabel `users`
 --
 ALTER TABLE `users`
@@ -184,8 +235,20 @@ ALTER TABLE `users`
   ADD UNIQUE KEY `email` (`email`);
 
 --
+-- Indeks untuk tabel `video`
+--
+ALTER TABLE `video`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- AUTO_INCREMENT untuk tabel yang dibuang
 --
+
+--
+-- AUTO_INCREMENT untuk tabel `artikel`
+--
+ALTER TABLE `artikel`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT untuk tabel `data_aktivitas`
@@ -212,10 +275,22 @@ ALTER TABLE `pemeriksaan_kader`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
+-- AUTO_INCREMENT untuk tabel `poster`
+--
+ALTER TABLE `poster`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT untuk tabel `users`
 --
 ALTER TABLE `users`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+
+--
+-- AUTO_INCREMENT untuk tabel `video`
+--
+ALTER TABLE `video`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- Ketidakleluasaan untuk tabel pelimpahan (Dumped Tables)
