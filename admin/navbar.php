@@ -23,6 +23,15 @@
           <a class="nav-link" href="admin_input.php">Input Artikel</a>
         </li>
         <li class="nav-item">
+          <a class="nav-link" href="kelola_kecamatan.php">Kecamatan</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="kelola_kelurahan.php">Kelurahan</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="kelola_sekolah.php">Sekolah</a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link btn btn-outline-light ms-2" href="logout.php">Logout</a>
         </li>
       </ul>
