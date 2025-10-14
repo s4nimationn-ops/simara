@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $err = 'Email sudah digunakan.';
         } else {
             $hash = password_hash($password, PASSWORD_DEFAULT);
-            $ins = mysqli_query($conn, "INSERT INTO users (nama,email,password,role) VALUES ('$nama','$email','$hash','remaja')");
+            $ins = mysqli_query($conn, "INSERT INTO users (nama,email,password,role) VALUES ('$nama', '$no_hp','$email','$hash','remaja')");
             if ($ins) {
                 echo "<script>alert('Registrasi berhasil. Silakan login.');location.href='login.php';</script>"; 
                 exit;

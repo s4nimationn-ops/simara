@@ -186,7 +186,7 @@ body {
 
 <!-- ===================== ARTIKEL EDUKASI ===================== -->
 <div class="container mt-5">
-  <h4 class="mb-4 fw-bold text-primary">📚 Artikel Edukasi</h4>
+  <h4 class="mb-4 fw-bold text-primary">📚 Artikel</h4>
   <div class="row g-4">
     <?php if (mysqli_num_rows($q_artikel) > 0): ?>
       <?php while ($artikel = mysqli_fetch_assoc($q_artikel)): ?>
@@ -227,7 +227,7 @@ body {
         </div>
       <?php endwhile; ?>
     <?php else: ?>
-      <p class="text-muted text-center">Belum ada artikel edukasi.</p>
+      <p class="text-muted text-center">Belum ada artikel.</p>
     <?php endif; ?>
   </div>
 </div>
