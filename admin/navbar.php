@@ -20,6 +20,9 @@
           <a class="nav-link" href="biodata_kader.php">Biodata</a>
         </li>
         <li class="nav-item">
+          <a class="nav-link" href="admin_input.php">Input Artikel</a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link btn btn-outline-light ms-2" href="logout.php">Logout</a>
         </li>
       </ul>
@@ -32,3 +35,4 @@
   z-index: 9999 !important;  /* Naikkan supaya tidak tertimpa */
 }
 </style>
+

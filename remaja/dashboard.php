@@ -26,7 +26,7 @@ $aktivitas = mysqli_fetch_assoc($q_aktivitas);
 $olahraga = $aktivitas['olahraga_per_minggu'] ?? '-';
 $gadget = $aktivitas['gadget_jam_per_hari'] ?? '-';
 
-// ambil tanggal pemberian TTD terakhir dari tabel pemberian_suplemen
+// ambil tanggal pemberian TTD terakhir
 $q_ttd = mysqli_query($conn, "
   SELECT tanggal_pemberian 
   FROM pemberian_suplemen 
@@ -39,13 +39,21 @@ $ttd = mysqli_fetch_assoc($q_ttd);
 $terakhir_ttd = $ttd ? new DateTime($ttd['tanggal_pemberian']) : null;
 $hari_ini = new DateTime();
 if ($terakhir_ttd) {
-    // 🧪 SIMULASI: anggap terakhir minum TTD sudah 8 hari lalu
+    // 🧪 (simulasi 8 hari lalu, hapus ini di produksi)
     $terakhir_ttd->modify('-8 days');
 }
 $selisih_hari = null;
 
 if ($terakhir_ttd) {
   $selisih_hari = $hari_ini->diff($terakhir_ttd)->days;
+}
+
+// Ambil semua artikel
+$sql_artikel = "SELECT * FROM artikel ORDER BY tanggal DESC";
+$q_artikel = mysqli_query($conn, $sql_artikel);
+
+if (!$q_artikel) {
+    die("Query artikel gagal: " . mysqli_error($conn));
 }
 
 ?>
@@ -138,8 +146,7 @@ body {
 </div>
 <?php endif; ?>
 
-
-<!-- Content -->
+<!-- Content IMT, Pola Makan, Aktivitas -->
 <div class="container mt-4">
   <div class="row g-4">
     <!-- Card IMT -->
@@ -174,6 +181,54 @@ body {
         <a href="input_aktivitas.php" class="btn btn-outline-primary w-100">Isi / Perbarui</a>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ===================== ARTIKEL EDUKASI ===================== -->
+<div class="container mt-5">
+  <h4 class="mb-4 fw-bold text-primary">📚 Artikel Edukasi</h4>
+  <div class="row g-4">
+    <?php if (mysqli_num_rows($q_artikel) > 0): ?>
+      <?php while ($artikel = mysqli_fetch_assoc($q_artikel)): ?>
+        <div class="col-md-4">
+          <div class="card h-100 shadow-sm">
+            
+            <!-- Poster -->
+            <?php if (!empty($artikel['poster'])): ?>
+              <img src="../uploads/<?= htmlspecialchars($artikel['poster']); ?>" 
+                   class="card-img-top" 
+                   alt="Poster Artikel" 
+                   style="height: 200px; object-fit: cover;">
+            <?php endif; ?>
+
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title"><?= htmlspecialchars($artikel['judul']); ?></h5>
+              <p class="card-text text-muted">
+                <?= substr(strip_tags($artikel['konten']), 0, 100); ?>...
+              </p>
+
+              <!-- Video (jika ada) -->
+              <?php if (!empty($artikel['video'])): ?>
+                <div class="ratio ratio-16x9 mb-3">
+                  <iframe 
+                    src="<?= htmlspecialchars($artikel['video']); ?>" 
+                    frameborder="0" 
+                    allowfullscreen>
+                  </iframe>
+                </div>
+              <?php endif; ?>
+
+              <a href="artikel_detail.php?id=<?= $artikel['id']; ?>" 
+                 class="btn btn-outline-primary mt-auto">
+                Baca Selengkapnya
+              </a>
+            </div>
+          </div>
+        </div>
+      <?php endwhile; ?>
+    <?php else: ?>
+      <p class="text-muted text-center">Belum ada artikel edukasi.</p>
+    <?php endif; ?>
   </div>
 </div>
 
