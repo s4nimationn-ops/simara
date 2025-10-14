@@ -20,6 +20,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     } else {
         $error = "Terjadi kesalahan: " . mysqli_error($conn);
+        $q = mysqli_query($conn, "SELECT id FROM users WHERE email='$email'");
+        if (mysqli_num_rows($q) > 0) {
+            $err = 'Email sudah digunakan.';
+        } else {
+            $hash = password_hash($password, PASSWORD_DEFAULT);
+            $ins = mysqli_query($conn, "INSERT INTO users (nama,no_hp,email,password,role) VALUES ('$nama', '$no_hp','$email','$hash','remaja')");
+            if ($ins) {
+                echo "<script>alert('Registrasi berhasil. Silakan login.');location.href='login.php';</script>"; 
+                exit;
+            } else {
+                $err = 'Gagal registrasi.';
+            }
+        }
     }
 }
 
