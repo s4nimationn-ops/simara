@@ -1,243 +1,168 @@
 <?php
 require_once '../config/db.php';
 
-// Ambil ID artikel dari URL
 if (!isset($_GET['id'])) {
-    echo "Artikel tidak ditemukan.";
-    exit;
+    die("Artikel tidak ditemukan.");
 }
 
 $id = intval($_GET['id']);
-$query = "SELECT * FROM artikel WHERE id = $id";
-$result = mysqli_query($conn, $query);
-$artikel = mysqli_fetch_assoc($result);
+$q = mysqli_query($conn, "SELECT * FROM artikel WHERE id = $id");
+$artikel = mysqli_fetch_assoc($q);
 
 if (!$artikel) {
-    echo "Artikel tidak ditemukan.";
-    exit;
+    die("Artikel tidak ditemukan.");
 }
 
-// Fungsi ambil video_id dari link YouTube
 function getYoutubeId($url) {
-    $pattern = '/(youtu\.be\/|v=)([a-zA-Z0-9_-]+)/';
+    $pattern = '/(?:youtu\.be\/|v=)([a-zA-Z0-9_-]+)/';
     if (preg_match($pattern, $url, $matches)) {
-        return $matches[2];
+        return $matches[1];
     }
     return null;
 }
 
-// Pisahkan paragraf pertama dan sisanya
-$konten = trim($artikel['konten']);
-$paragraf = preg_split('/\r\n|\r|\n/', $konten, 2);
-$paragraf_pertama = $paragraf[0] ?? '';
-$paragraf_selanjutnya = $paragraf[1] ?? '';
-
-$video_id = !empty($artikel['video']) ? getYoutubeId($artikel['video']) : null;
+// Pisahkan paragraf dari konten artikel
+$paragraf = preg_split('/\n+/', trim($artikel['konten']));
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <title><?php echo htmlspecialchars($artikel['judul']); ?></title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            padding: 20px;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><?= htmlspecialchars($artikel['judul']); ?></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-        .artikel-container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 25px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-radius: 8px;
-        }
+  <style>
+    body { background: #f8f9fa; }
+    .poster-artikel {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      cursor: zoom-in;
+      transition: 0.3s;
+      object-fit: cover;
+    }
+    .poster-artikel:hover { opacity: 0.8; }
 
-        .back-button {
-            display: inline-block;
-            margin-bottom: 15px;
-            padding: 8px 14px;
-            background-color: #007bff;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 5px;
-            font-size: 14px;
-            transition: 0.3s;
-        }
+    /* Galeri foto tambahan */
+    .galeri-foto {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 15px;
+      margin: 25px 0;
+    }
+    .galeri-foto img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      border-radius: 8px;
+      cursor: zoom-in;
+      transition: 0.3s;
+    }
+    .galeri-foto img:hover { opacity: 0.8; }
 
-        .back-button:hover {
-            background-color: #0056b3;
-        }
-
-        .artikel-container h2 {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-
-        .artikel-container .tanggal {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 20px;
-        }
-
-        .poster-wrapper {
-            text-align: center;
-            margin: 20px 0;
-            cursor: zoom-in;
-        }
-
-        .poster-wrapper img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            display: block;
-            margin: 0 auto;
-            transition: 0.3s;
-        }
-
-        .poster-wrapper img:hover {
-            opacity: 0.8;
-        }
-
-        .paragraf-1, .konten-lanjutan {
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
-
-        h4 {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-
-        .video-wrapper {
-            margin-top: 30px;
-            position: relative;
-            padding-bottom: 56.25%; /* 16:9 */
-            height: 0;
-            overflow: hidden;
-            border-radius: 8px;
-        }
-
-        .video-wrapper iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: 0;
-        }
-
-        /* ===== Modal Zoom Gambar ===== */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 999;
-            padding-top: 60px;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.8);
-        }
-
-        .modal-content {
-            display: block;
-            margin: auto;
-            max-width: 90%;
-            max-height: 90%;
-            border-radius: 10px;
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 15px;
-            right: 30px;
-            color: #fff;
-            font-size: 30px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .modal-close:hover {
-            color: #bbb;
-        }
-    </style>
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      padding-top: 60px;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.8);
+    }
+    .modal-content {
+      margin: auto;
+      display: block;
+      max-width: 80%;
+      border-radius: 8px;
+    }
+    .close {
+      position: absolute;
+      top: 15px;
+      right: 35px;
+      color: white;
+      font-size: 40px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .konten-artikel { margin-top: 25px; font-size: 18px; line-height: 1.7; color: #333; }
+    .judul-artikel { font-weight: 700; }
+    .btn-back { margin-bottom: 20px; }
+  </style>
 </head>
 <body>
+<div class="container my-5">
 
-<div class="artikel-container">
-    <!-- Tombol kembali -->
-    <a href="dashboard.php" class="back-button">← Kembali ke Dashboard</a>
+  <a href="dashboard.php" class="btn btn-secondary btn-back">&larr; Kembali ke Dashboard</a>
 
-    <!-- Judul Artikel -->
-    <h2><?php echo htmlspecialchars($artikel['judul']); ?></h2>
-    <p class="tanggal"><?php echo date('d M Y', strtotime($artikel['tanggal'])); ?></p>
+  <h1 class="judul-artikel mb-3"><?= htmlspecialchars($artikel['judul']); ?></h1>
+  <p class="text-muted"><?= date('d M Y', strtotime($artikel['tanggal'])); ?></p>
 
-    <?php if (!empty($artikel['sub_judul'])): ?>
-        <h4><?php echo htmlspecialchars($artikel['sub_judul']); ?></h4>
+  <!-- Poster Utama -->
+  <?php if (!empty($artikel['poster'])): ?>
+    <img src="../uploads/<?= htmlspecialchars($artikel['poster']); ?>" 
+         alt="Poster Artikel" 
+         class="poster-artikel mb-4"
+         onclick="zoomImage(this)">
+  <?php endif; ?>
+
+  <!-- Konten Artikel + Galeri di tengah -->
+  <div class="konten-artikel">
+    <?php
+    $titik_sisip = 2; // sisipkan galeri setelah paragraf ke-2
+    foreach ($paragraf as $i => $p) {
+        echo "<p>" . nl2br(htmlspecialchars($p)) . "</p>";
+
+        if ($i + 1 == $titik_sisip) {
+            if (!empty($artikel['foto_lain'])) {
+                $foto_array = json_decode($artikel['foto_lain'], true);
+                if (is_array($foto_array) && count($foto_array) > 0) {
+                    echo '<div class="galeri-foto">';
+                    foreach ($foto_array as $foto) {
+                        echo '<img src="../uploads/' . htmlspecialchars($foto) . '" alt="Foto Tambahan" onclick="zoomImage(this)">';
+                    }
+                    echo '</div>';
+                }
+            }
+        }
+    }
+    ?>
+  </div>
+
+  <!-- Video YouTube -->
+  <?php if (!empty($artikel['video'])): ?>
+    <?php
+      $video_id = getYoutubeId($artikel['video']);
+      if ($video_id):
+    ?>
+      <div class="ratio ratio-16x9 mt-4">
+        <iframe src="https://www.youtube.com/embed/<?= $video_id; ?>" 
+                frameborder="0" 
+                allowfullscreen>
+        </iframe>
+      </div>
+    <?php else: ?>
+      <p class="text-danger mt-3">Link video tidak valid</p>
     <?php endif; ?>
+  <?php endif; ?>
 
-    <!-- Paragraf pertama -->
-    <?php if (!empty($paragraf_pertama)): ?>
-        <p class="paragraf-1"><?php echo nl2br(htmlspecialchars($paragraf_pertama)); ?></p>
-    <?php endif; ?>
-
-    <!-- Gambar poster -->
-    <?php if (!empty($artikel['poster'])): ?>
-        <div class="poster-wrapper">
-            <img id="posterImg" src="../uploads/<?php echo htmlspecialchars($artikel['poster']); ?>" alt="Poster Artikel">
-        </div>
-    <?php endif; ?>
-
-    <!-- Paragraf selanjutnya -->
-    <?php if (!empty($paragraf_selanjutnya)): ?>
-        <div class="konten-lanjutan">
-            <?php echo nl2br(htmlspecialchars($paragraf_selanjutnya)); ?>
-        </div>
-    <?php endif; ?>
-
-    <!-- Video YouTube -->
-    <?php if ($video_id): ?>
-        <div class="video-wrapper">
-            <iframe src="https://www.youtube.com/embed/<?php echo $video_id; ?>" allowfullscreen></iframe>
-        </div>
-    <?php endif; ?>
 </div>
 
-<!-- Modal Zoom Gambar -->
-<div id="posterModal" class="modal">
-    <span class="modal-close">&times;</span>
-    <img class="modal-content" id="posterZoom">
+<!-- Modal Zoom -->
+<div id="zoomModal" class="modal" onclick="closeZoom()">
+    <span class="close">&times;</span>
+    <img class="modal-content" id="zoomedImage">
 </div>
 
 <script>
-    const modal = document.getElementById("posterModal");
-    const posterImg = document.getElementById("posterImg");
-    const modalImg = document.getElementById("posterZoom");
-    const closeBtn = document.getElementsByClassName("modal-close")[0];
-
-    if (posterImg) {
-        posterImg.onclick = function() {
-            modal.style.display = "block";
-            modalImg.src = this.src;
-        }
-    }
-
-    closeBtn.onclick = function() {
-        modal.style.display = "none";
-    }
-
-    modal.onclick = function(e) {
-        if (e.target === modal) {
-            modal.style.display = "none";
-        }
-    }
+function zoomImage(img) {
+    document.getElementById("zoomModal").style.display = "block";
+    document.getElementById("zoomedImage").src = img.src;
+}
+function closeZoom() {
+    document.getElementById("zoomModal").style.display = "none";
+}
 </script>
-
 </body>
 </html>

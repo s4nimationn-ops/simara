@@ -14,6 +14,7 @@ if (isset($_POST['simpan'])) {
     $konten = mysqli_real_escape_string($conn, $_POST['konten']);
     $video = mysqli_real_escape_string($conn, $_POST['video']);
 
+    // Poster utama
     $poster = '';
     if (!empty($_FILES['poster']['name'])) {
         $posterName = time().'_'.basename($_FILES['poster']['name']);
@@ -23,7 +24,21 @@ if (isset($_POST['simpan'])) {
         }
     }
 
-    mysqli_query($conn, "INSERT INTO artikel (judul, konten, poster, video, tanggal) VALUES ('$judul', '$konten', '$poster', '$video', NOW())");
+    // Foto lain (2 opsional)
+    $foto_lain = [];
+    for ($i = 1; $i <= 2; $i++) {
+        if (!empty($_FILES['foto_lain'.$i]['name'])) {
+            $fotoName = time().'_'.$i.'_'.basename($_FILES['foto_lain'.$i]['name']);
+            $targetFoto = "../uploads/".$fotoName;
+            if (move_uploaded_file($_FILES['foto_lain'.$i]['tmp_name'], $targetFoto)) {
+                $foto_lain[] = $fotoName;
+            }
+        }
+    }
+    $foto_lain_json = json_encode($foto_lain);
+
+    mysqli_query($conn, "INSERT INTO artikel (judul, konten, poster, video, foto_lain, tanggal) 
+        VALUES ('$judul', '$konten', '$poster', '$video', '$foto_lain_json', NOW())");
     header("Location: admin_input.php");
     exit;
 }
@@ -35,6 +50,7 @@ if (isset($_POST['update'])) {
     $konten = mysqli_real_escape_string($conn, $_POST['konten']);
     $video = mysqli_real_escape_string($conn, $_POST['video']);
 
+    // Poster
     $poster = $_POST['poster_lama'];
     if (!empty($_FILES['poster']['name'])) {
         $posterName = time().'_'.basename($_FILES['poster']['name']);
@@ -47,7 +63,25 @@ if (isset($_POST['update'])) {
         }
     }
 
-    mysqli_query($conn, "UPDATE artikel SET judul='$judul', konten='$konten', poster='$poster', video='$video' WHERE id=$id");
+    // Foto lain
+    $existing_foto_lain = json_decode($_POST['foto_lain_lama'], true) ?? [];
+    $new_foto_lain = $existing_foto_lain;
+
+    for ($i = 1; $i <= 2; $i++) {
+        if (!empty($_FILES['foto_lain'.$i]['name'])) {
+            $fotoName = time().'_'.$i.'_'.basename($_FILES['foto_lain'.$i]['name']);
+            $targetFoto = "../uploads/".$fotoName;
+            if (move_uploaded_file($_FILES['foto_lain'.$i]['tmp_name'], $targetFoto)) {
+                $new_foto_lain[] = $fotoName;
+            }
+        }
+    }
+
+    $foto_lain_json = json_encode($new_foto_lain);
+
+    mysqli_query($conn, "UPDATE artikel 
+        SET judul='$judul', konten='$konten', poster='$poster', video='$video', foto_lain='$foto_lain_json' 
+        WHERE id=$id");
     header("Location: admin_input.php");
     exit;
 }
@@ -55,11 +89,24 @@ if (isset($_POST['update'])) {
 // ========== Proses Hapus Artikel ==========
 if (isset($_GET['hapus'])) {
     $id = intval($_GET['hapus']);
-    $q = mysqli_query($conn, "SELECT poster FROM artikel WHERE id=$id");
+    $q = mysqli_query($conn, "SELECT poster, foto_lain FROM artikel WHERE id=$id");
     $d = mysqli_fetch_assoc($q);
-    if ($d && !empty($d['poster']) && file_exists("../uploads/".$d['poster'])) {
-        unlink("../uploads/".$d['poster']);
+
+    if ($d) {
+        if (!empty($d['poster']) && file_exists("../uploads/".$d['poster'])) {
+            unlink("../uploads/".$d['poster']);
+        }
+
+        $foto_lain = json_decode($d['foto_lain'], true);
+        if (is_array($foto_lain)) {
+            foreach ($foto_lain as $f) {
+                if (file_exists("../uploads/".$f)) {
+                    unlink("../uploads/".$f);
+                }
+            }
+        }
     }
+
     mysqli_query($conn, "DELETE FROM artikel WHERE id=$id");
     header("Location: admin_input.php");
     exit;
@@ -84,6 +131,7 @@ $artikel = mysqli_query($conn, "SELECT * FROM artikel ORDER BY tanggal DESC");
         .btn-hapus:hover { background: #bb2d3b; color: white; }
         .poster-preview { max-width: 200px; margin-top: 10px; border-radius: 6px; }
         .edit-form { display: none; background: #f8f9fa; padding: 15px; border-radius: 8px; }
+        .foto-lain-preview { max-width: 120px; margin-top: 5px; margin-right: 5px; border-radius: 6px; }
     </style>
 </head>
 <body class="p-4">
@@ -104,7 +152,15 @@ $artikel = mysqli_query($conn, "SELECT * FROM artikel ORDER BY tanggal DESC");
             <input type="file" name="poster" class="form-control">
         </div>
         <div class="mb-3">
-            <label>Link YouTube (boleh link asli)</label>
+            <label>Foto Lain 1 (opsional)</label>
+            <input type="file" name="foto_lain1" class="form-control">
+        </div>
+        <div class="mb-3">
+            <label>Foto Lain 2 (opsional)</label>
+            <input type="file" name="foto_lain2" class="form-control">
+        </div>
+        <div class="mb-3">
+            <label>Link YouTube (boleh kosong)</label>
             <input type="text" name="video" class="form-control">
         </div>
         <button type="submit" name="simpan" class="btn btn-primary w-100">💾 Simpan Artikel</button>
@@ -122,6 +178,7 @@ $artikel = mysqli_query($conn, "SELECT * FROM artikel ORDER BY tanggal DESC");
         </thead>
         <tbody>
         <?php $no=1; while($row = mysqli_fetch_assoc($artikel)): ?>
+            <?php $fotoLainArr = json_decode($row['foto_lain'], true) ?? []; ?>
             <tr>
                 <td><?= $no++ ?></td>
                 <td><?= htmlspecialchars($row['judul']) ?></td>
@@ -150,6 +207,15 @@ $artikel = mysqli_query($conn, "SELECT * FROM artikel ORDER BY tanggal DESC");
                             <?php if ($row['poster']): ?>
                                 <img src="../uploads/<?= htmlspecialchars($row['poster']) ?>" class="poster-preview">
                             <?php endif; ?>
+                        </div>
+                        <div class="mb-2">
+                            <label>Foto Lain 1 & 2</label><br>
+                            <input type="file" name="foto_lain1" class="form-control mb-1">
+                            <input type="file" name="foto_lain2" class="form-control">
+                            <input type="hidden" name="foto_lain_lama" value='<?= json_encode($fotoLainArr) ?>'>
+                            <?php foreach ($fotoLainArr as $f): ?>
+                                <img src="../uploads/<?= htmlspecialchars($f) ?>" class="foto-lain-preview">
+                            <?php endforeach; ?>
                         </div>
                         <div class="mb-2">
                             <label>Link YouTube</label>
