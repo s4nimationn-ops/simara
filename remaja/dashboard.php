@@ -8,12 +8,31 @@ cek_role(['remaja']);
 $user_id = $_SESSION['user_id'];
 $nama = isset($_SESSION['nama']) ? $_SESSION['nama'] : 'Remaja';
 
-// ================= IMT =================
+// ================= IMT TERAKHIR =================
 $q_imt = mysqli_query($conn, "SELECT * FROM data_imt WHERE user_id='$user_id' ORDER BY tanggal_input DESC LIMIT 1");
 if (!$q_imt) die("Query IMT gagal: " . mysqli_error($conn));
 $imt = mysqli_fetch_assoc($q_imt);
 $imt_value = $imt['hasil_imt'] ?? '-';
 $imt_status = $imt['status_imt'] ?? 'Belum diisi';
+
+// ================= DATA IMT UNTUK GRAFIK =================
+$q_imt_grafik = mysqli_query($conn, "SELECT tanggal_input, status_imt FROM data_imt WHERE user_id='$user_id' ORDER BY tanggal_input ASC");
+$imt_labels = [];
+$imt_values = [];
+
+// Mapping status ke angka
+function status_to_number($status) {
+    if ($status == "Kurus") return 1;
+    if ($status == "Normal") return 2;
+    if ($status == "Gemuk") return 3;
+    return 0;
+}
+
+while ($row = mysqli_fetch_assoc($q_imt_grafik)) {
+    $imt_labels[] = date('d/m/Y', strtotime($row['tanggal_input']));
+    $imt_values[] = status_to_number($row['status_imt']);
+}
+$total_data_imt = count($imt_values);
 
 // ================= Pola Makan =================
 $q_pola = mysqli_query($conn, "SELECT * FROM data_pola_makan WHERE user_id='$user_id' ORDER BY tanggal_input DESC LIMIT 1");
@@ -41,10 +60,10 @@ if (!$q_ttd) die("Query TTD gagal: " . mysqli_error($conn));
 $ttd = mysqli_fetch_assoc($q_ttd);
 $terakhir_ttd = $ttd ? new DateTime($ttd['tanggal_pemberian']) : null;
 $hari_ini = new DateTime();
-if ($terakhir_ttd) $terakhir_ttd->modify('-8 days'); // Hanya untuk simulasi
+if ($terakhir_ttd) $terakhir_ttd->modify('-8 days'); // simulasi
 $selisih_hari = $terakhir_ttd ? $hari_ini->diff($terakhir_ttd)->days : null;
 
-// ================= GAD-7 (Screening Kesehatan Mental) =================
+// ================= GAD-7 =================
 $q_gad = mysqli_query($conn, "SELECT * FROM data_gad7 WHERE user_id='$user_id' ORDER BY tanggal_input DESC, id DESC LIMIT 1");
 if (!$q_gad) die("Query GAD-7 gagal: " . mysqli_error($conn));
 $gad = mysqli_fetch_assoc($q_gad);
@@ -54,7 +73,7 @@ $gad_result = $gad['kategori'] ?? 'Belum diisi';
 
 $boleh_screening = true;
 $sisa_waktu = 0;
-$durasi_tunggu = 1; // dalam menit
+$durasi_tunggu = 1; // menit
 
 if ($gad) {
     $waktu_terakhir = strtotime($gad['tanggal_input']);
@@ -79,6 +98,7 @@ if (!$q_artikel) die("Query artikel gagal: " . mysqli_error($conn));
 <title>Dashboard Remaja - SIMARA</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 body { background: #f9fafb; font-family: 'Poppins', sans-serif; }
 .navbar { background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
@@ -86,8 +106,6 @@ body { background: #f9fafb; font-family: 'Poppins', sans-serif; }
 .card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
 .card h5 { font-weight: 600; }
 .metric-value { font-size: 2rem; font-weight: 700; color: #2563eb; }
-.btn-outline-primary { border-radius: 10px; font-weight: 500; }
-.btn-outline-primary:hover { background-color: #2563eb; color: white; }
 .header-box {
   background: linear-gradient(135deg, #3b82f6, #06b6d4);
   color: white;
@@ -95,11 +113,13 @@ body { background: #f9fafb; font-family: 'Poppins', sans-serif; }
   padding: 25px 30px;
   box-shadow: 0 6px 12px rgba(0,0,0,0.1);
 }
-.header-box h4 { font-weight: 600; }
 .gad-box { margin-top: 20px; background: rgba(255,255,255,0.15); padding: 15px; border-radius: 12px; }
-.gad-box h5 { font-size: 1rem; margin-bottom: 5px; }
 .gad-box .score { font-size: 1.4rem; font-weight: 600; }
 .badge-wait { background: rgba(0,0,0,0.3); color: #fff; padding: 6px 12px; border-radius: 10px; }
+.chart-container {
+  max-width: 1000px; /* ukuran grafik diperbesar */
+  margin: 0 auto;
+}
 </style>
 </head>
 <body>
@@ -132,9 +152,7 @@ body { background: #f9fafb; font-family: 'Poppins', sans-serif; }
           <?php if ($boleh_screening): ?>
             <a href="gad7_screening.php" class="btn btn-primary">Mulai Screening</a>
           <?php else: ?>
-            <span class="badge-wait">
-              Tunggu <?= ceil($sisa_waktu); ?> menit lagi ⏳
-            </span>
+            <span class="badge-wait">Tunggu <?= ceil($sisa_waktu); ?> menit lagi ⏳</span>
           <?php endif; ?>
         </div>
       </div>
@@ -142,6 +160,7 @@ body { background: #f9fafb; font-family: 'Poppins', sans-serif; }
   </div>
 </div>
 
+<!-- Alert TTD -->
 <?php if (!$terakhir_ttd || $selisih_hari >= 7): ?>
 <div class="container mt-4">
   <div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert">
@@ -157,7 +176,7 @@ body { background: #f9fafb; font-family: 'Poppins', sans-serif; }
 </div>
 <?php endif; ?>
 
-<!-- Konten IMT, Pola Makan, Aktivitas -->
+<!-- Box Inputan -->
 <div class="container mt-4">
   <div class="row g-4">
     <div class="col-md-4">
@@ -190,7 +209,17 @@ body { background: #f9fafb; font-family: 'Poppins', sans-serif; }
   </div>
 </div>
 
-<!-- ===================== ARTIKEL EDUKASI ===================== -->
+<!-- Grafik Garis IMT -->
+<?php if ($total_data_imt > 0): ?>
+<div class="container mt-5">
+  <h4 class="mb-4 fw-bold text-primary text-center">📈 Grafik Kategori IMT Kamu</h4>
+  <div class="card p-4 shadow-sm chart-container">
+    <canvas id="imtLineChart"></canvas>
+  </div>
+</div>
+<?php endif; ?>
+
+<!-- Artikel -->
 <div class="container mt-5">
   <h4 class="mb-4 fw-bold text-primary">📚 Artikel</h4>
   <div class="row g-4">
@@ -206,21 +235,13 @@ body { background: #f9fafb; font-family: 'Poppins', sans-serif; }
             <?php endif; ?>
             <div class="card-body d-flex flex-column">
               <h5 class="card-title"><?= htmlspecialchars($artikel['judul']); ?></h5>
-              <p class="card-text text-muted">
-                <?= substr(strip_tags($artikel['konten']), 0, 100); ?>...
-              </p>
+              <p class="card-text text-muted"><?= substr(strip_tags($artikel['konten']), 0, 100); ?>...</p>
               <?php if (!empty($artikel['video'])): ?>
                 <div class="ratio ratio-16x9 mb-3">
-                  <iframe 
-                    src="<?= htmlspecialchars($artikel['video']); ?>" 
-                    frameborder="0" 
-                    allowfullscreen>
-                  </iframe>
+                  <iframe src="<?= htmlspecialchars($artikel['video']); ?>" frameborder="0" allowfullscreen></iframe>
                 </div>
               <?php endif; ?>
-              <a href="artikel_detail.php?id=<?= $artikel['id']; ?>" class="btn btn-outline-primary mt-auto">
-                Baca Selengkapnya
-              </a>
+              <a href="artikel_detail.php?id=<?= $artikel['id']; ?>" class="btn btn-outline-primary mt-auto">Baca Selengkapnya</a>
             </div>
           </div>
         </div>
@@ -231,6 +252,66 @@ body { background: #f9fafb; font-family: 'Poppins', sans-serif; }
   </div>
 </div>
 
+<!-- Script -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<?php if ($total_data_imt > 0): ?>
+<script>
+const kategoriMap = {
+    1: 'Kurus',
+    2: 'Normal',
+    3: 'Gemuk'
+};
+const labels = <?= json_encode($imt_labels) ?>;
+const values = <?= json_encode($imt_values) ?>;
+const ctx = document.getElementById('imtLineChart').getContext('2d');
+
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: labels,
+    datasets: [{
+      label: 'Kategori IMT',
+      data: values,
+      borderColor: '#2563eb',
+      backgroundColor: 'rgba(37, 99, 235, 0.2)',
+      borderWidth: 3,
+      tension: 0.3,
+      fill: true,
+      pointRadius: 6,
+      pointBackgroundColor: '#2563eb'
+    }]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      y: {
+        min: 1,
+        max: 3,
+        ticks: {
+          stepSize: 1,
+          callback: function(value) {
+            return kategoriMap[value] || '';
+          }
+        },
+        title: { display: true, text: 'Kategori IMT' }
+      },
+      x: {
+        title: { display: true, text: 'Tanggal Input' }
+      }
+    },
+    plugins: {
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            return 'Kategori: ' + kategoriMap[context.parsed.y];
+          }
+        }
+      },
+      legend: { display: false }
+    }
+  }
+});
+</script>
+<?php endif; ?>
 </body>
 </html>
