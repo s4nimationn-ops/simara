@@ -7,16 +7,17 @@ $user_id = $_SESSION['user_id'];
 $tinggi = floatval($_POST['tinggi_cm']);
 $berat = floatval($_POST['berat_kg']);
 
-// hitung IMT
+// ================= HITUNG IMT =================
 if ($tinggi > 0) {
     $hasil_imt = $berat / pow($tinggi / 100, 2);
-    $hasil_imt = round($hasil_imt, 3);
+    $hasil_imt = round($hasil_imt, 2);
 
     if ($hasil_imt < 18.5) {
         $status_imt = "Kurus";
     } elseif ($hasil_imt >= 18.5 && $hasil_imt < 25) {
         $status_imt = "Normal";
     } else {
+        // >= 25 ke atas kita anggap Gemuk
         $status_imt = "Gemuk";
     }
 } else {
@@ -24,20 +25,14 @@ if ($tinggi > 0) {
     $status_imt = "Tidak valid";
 }
 
-// cek apakah user sudah pernah mengisi
+// ================= CEK DATA =================
 $q_cek = mysqli_query($conn, "SELECT id FROM data_imt WHERE user_id='$user_id' LIMIT 1");
 
 if (mysqli_num_rows($q_cek) > 0) {
-    // UPDATE
-    $sql = "UPDATE data_imt SET 
-              tinggi_cm='$tinggi', 
-              berat_kg='$berat', 
-              hasil_imt='$hasil_imt',
-              status_imt='$status_imt',
-              tanggal_input=NOW()
-            WHERE user_id='$user_id'";
+    // Dulu update — sekarang insert juga
+    $sql = "INSERT INTO data_imt (user_id, tinggi_cm, berat_kg, hasil_imt, status_imt, tanggal_input) 
+            VALUES ('$user_id', '$tinggi', '$berat', '$hasil_imt', '$status_imt', NOW())";
 } else {
-    // INSERT
     $sql = "INSERT INTO data_imt (user_id, tinggi_cm, berat_kg, hasil_imt, status_imt) 
             VALUES ('$user_id','$tinggi','$berat','$hasil_imt','$status_imt')";
 }
