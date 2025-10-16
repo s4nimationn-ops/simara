@@ -8,6 +8,40 @@ function getYoutubeId($url) {
     return $matches[1] ?? '';
 }
 
+// ================== HAPUS POSTER ==================
+if (isset($_GET['hapus_poster'])) {
+    $id = intval($_GET['hapus_poster']);
+    $q = mysqli_query($conn, "SELECT poster FROM artikel WHERE id=$id");
+    $d = mysqli_fetch_assoc($q);
+    if ($d && !empty($d['poster']) && file_exists("../uploads/".$d['poster'])) {
+        unlink("../uploads/".$d['poster']);
+    }
+    mysqli_query($conn, "UPDATE artikel SET poster='' WHERE id=$id");
+    header("Location: admin_input.php");
+    exit;
+}
+
+// ================== HAPUS FOTO LAIN ==================
+if (isset($_GET['hapus_foto']) && isset($_GET['foto'])) {
+    $id = intval($_GET['hapus_foto']);
+    $foto = $_GET['foto'];
+
+    $q = mysqli_query($conn, "SELECT foto_lain FROM artikel WHERE id=$id");
+    $d = mysqli_fetch_assoc($q);
+    if ($d) {
+        $fotoLain = json_decode($d['foto_lain'], true) ?? [];
+        $fotoLain = array_filter($fotoLain, function($f) use ($foto) {
+            return $f !== $foto;
+        });
+        if (file_exists("../uploads/".$foto)) {
+            unlink("../uploads/".$foto);
+        }
+        mysqli_query($conn, "UPDATE artikel SET foto_lain='".json_encode(array_values($fotoLain))."' WHERE id=$id");
+    }
+    header("Location: admin_input.php");
+    exit;
+}
+
 // ================== Proses Simpan Artikel ==================
 if (isset($_POST['simpan'])) {
     $judul = mysqli_real_escape_string($conn, $_POST['judul']);
@@ -121,9 +155,11 @@ body { background: #f8fafc; font-family: 'Poppins', sans-serif; }
 <body class="p-4">
 
 <div class="container">
+  <!-- Tombol Kembali -->
+  <a class="btn btn-secondary mb-3" href="dashboard.php">⬅ Kembali ke Dashboard</a>
+
   <!-- Form Tambah Artikel -->
   <div class="card mb-5">
-    <a class="btn btn-secondary mb-3" href="dashboard.php">⬅ Kembali ke Dashboard</a>
     <div class="card-header"><i class="bi bi-journal-plus"></i> Tambah Artikel Baru</div>
     <div class="card-body">
       <form method="post" enctype="multipart/form-data">
@@ -200,14 +236,28 @@ body { background: #f8fafc; font-family: 'Poppins', sans-serif; }
                   <label>Poster</label>
                   <input type="file" name="poster" class="form-control">
                   <input type="hidden" name="poster_lama" value="<?= $row['poster'] ?>">
-                  <?php if ($row['poster']): ?><img src="../uploads/<?= $row['poster'] ?>" class="poster-preview mt-2"><?php endif; ?>
+                  <?php if ($row['poster']): ?>
+                    <div class="mt-2 d-flex align-items-center gap-2">
+                        <img src="../uploads/<?= $row['poster'] ?>" class="poster-preview">
+                        <a href="?hapus_poster=<?= $row['id'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('Yakin hapus poster ini?')">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </div>
+                  <?php endif; ?>
                 </div>
                 <div class="mb-2">
                   <label>Foto Lain</label>
                   <input type="file" name="foto_lain1" class="form-control mb-1">
                   <input type="file" name="foto_lain2" class="form-control">
                   <input type="hidden" name="foto_lain_lama" value='<?= json_encode($fotoLainArr) ?>'>
-                  <?php foreach ($fotoLainArr as $f): ?><img src="../uploads/<?= $f ?>" class="foto-lain-preview"><?php endforeach; ?>
+                  <?php foreach ($fotoLainArr as $f): ?>
+                    <div class="mt-2 d-inline-flex align-items-center gap-2 me-2 mb-2">
+                        <img src="../uploads/<?= $f ?>" class="foto-lain-preview">
+                        <a href="?hapus_foto=<?= $row['id'] ?>&foto=<?= urlencode($f) ?>" class="btn btn-danger btn-sm" onclick="return confirm('Yakin hapus foto ini?')">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </div>
+                  <?php endforeach; ?>
                 </div>
                 <div class="mb-2">
                   <label>Link YouTube</label>
