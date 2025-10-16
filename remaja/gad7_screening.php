@@ -192,8 +192,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $can_screen) {
 
 <div class="container">
     <h1>Skrining Kecemasan GAD-7</h1>
-    <p>Selama <strong>2 minggu terakhir</strong>, seberapa sering kamu terganggu oleh masalah-masalah berikut?</p>
-    <hr>
 
     <?php if ($success_message): ?>
         <div class="alert-success"><?= $success_message; ?></div>
