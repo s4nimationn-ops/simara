@@ -3,26 +3,33 @@ require_once '../config/session.php';
 require_once '../config/db.php';
 cek_role(['remaja']);
 
-// Pastikan user login
-if (!isset($_SESSION['user_id'])) {
-    header("Location: ../login.php");
-    exit;
-}
+$user_id = $_SESSION['user_id'];
 
 // Ambil data dari form
-$user_id = $_SESSION['user_id'];
-$olahraga_per_minggu = $_POST['olahraga_per_minggu'] ?? '';
-$gadget_jam_per_hari = $_POST['gadget_jam_per_hari'] ?? '';
+$olahraga = intval($_POST['olahraga_per_minggu']);
+$gadget = floatval($_POST['gadget_jam_per_hari']);
+
+// Validasi input
+if ($gadget <= 0) {
+    echo "<script>alert('Jam penggunaan gadget tidak boleh 0!'); history.back();</script>";
+    exit;
+}
+
+if ($olahraga < 0) {
+    echo "<script>alert('Nilai olahraga tidak valid!'); history.back();</script>";
+    exit;
+}
 
 // Simpan ke database
-$query = "INSERT INTO data_aktivitas (user_id, olahraga_per_minggu, gadget_jam_per_hari)
-          VALUES ('$user_id', '$olahraga_per_minggu', '$gadget_jam_per_hari')";
+$stmt = $conn->prepare("INSERT INTO data_aktivitas (user_id, olahraga_per_minggu, gadget_jam_per_hari) VALUES (?, ?, ?)");
+$stmt->bind_param("iid", $user_id, $olahraga, $gadget);
 
-if (mysqli_query($conn, $query)) {
-    // Jika berhasil simpan
-    header("Location: dashboard.php?sukses=aktivitas");
-    exit;
+if ($stmt->execute()) {
+    echo "<script>alert('Data aktivitas berhasil disimpan!'); window.location.href='dashboard.php';</script>";
 } else {
-    echo "Terjadi kesalahan: " . mysqli_error($conn);
+    echo "<script>alert('Terjadi kesalahan saat menyimpan data.'); history.back();</script>";
 }
+
+$stmt->close();
+$conn->close();
 ?>
