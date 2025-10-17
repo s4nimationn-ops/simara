@@ -5,26 +5,40 @@ cek_role(['kader']);
 
 $nama = $_SESSION['nama'];
 
+// === Statistik Status Kesehatan ===
+$q_stat = mysqli_query($conn, "
+  SELECT 
+    SUM(CASE WHEN status_kesehatan='Anemia' THEN 1 ELSE 0 END) AS anemia,
+    SUM(CASE WHEN status_kesehatan='Darah Rendah' THEN 1 ELSE 0 END) AS darah_rendah,
+    SUM(CASE WHEN status_kesehatan='Normal' THEN 1 ELSE 0 END) AS normal,
+    SUM(CASE WHEN status_kesehatan='Darah Tinggi' THEN 1 ELSE 0 END) AS darah_tinggi
+  FROM users
+  WHERE role='remaja'
+");
+$stat = mysqli_fetch_assoc($q_stat);
+
 // ambil data remaja terbaru
-$remaja = mysqli_query($conn, "SELECT id, nama, email, alamat, no_hp, status_kesehatan FROM users WHERE role='remaja' ORDER BY created_at DESC LIMIT 20");
+$remaja = mysqli_query($conn, "
+  SELECT id, nama, email, alamat, no_hp, status_kesehatan 
+  FROM users 
+  WHERE role='remaja' 
+  ORDER BY created_at DESC 
+  LIMIT 20
+");
 ?>
 <!doctype html>
 <html lang="id">
 <head>
   <meta charset="utf-8">
   <title>Kader Dashboard</title>
-  <link href="/assets/css/style.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       background-color: #f8f9fa;
       font-family: 'Poppins', sans-serif;
     }
-
-    /* Hero Header */
     .hero-header {
       background: linear-gradient(135deg, #1e824c, #27ae60);
       color: #fff;
@@ -37,30 +51,36 @@ $remaja = mysqli_query($conn, "SELECT id, nama, email, alamat, no_hp, status_kes
       transform: translateY(-40px);
       transition: opacity 0.8s ease, transform 0.8s ease;
     }
-    .hero-header.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    .hero-header.show { opacity: 1; transform: translateY(0); }
 
-    /* Card Dashboard */
     .dashboard-card {
       opacity: 0;
       transform: translateY(30px);
       transition: opacity 0.8s ease, transform 0.8s ease;
     }
-    .dashboard-card.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    .dashboard-card.show { opacity: 1; transform: translateY(0); }
 
-    tbody tr {
-      opacity: 0;
-      transform: translateY(20px);
+    /* ===== GRAFIK CARD ===== */
+    .chart-card {
+      border-radius: 18px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      padding: 25px;
+      background: #fff;
+      margin: 40px auto;
+      max-width: 600px;
+      text-align: center;
     }
-    tbody tr.show-row {
-      opacity: 1;
-      transform: translateY(0);
-      transition: opacity 0.6s ease, transform 0.6s ease;
+    .chart-container {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      height: 350px;
+      margin: 0 auto;
+    }
+    small.text-muted {
+      display: block;
+      text-align: center;
+      margin-top: 10px;
     }
 
     a.nama-link {
@@ -68,19 +88,9 @@ $remaja = mysqli_query($conn, "SELECT id, nama, email, alamat, no_hp, status_kes
       color: #0d6efd;
       cursor: pointer;
     }
-    a.nama-link:hover {
-      text-decoration: underline;
-    }
+    a.nama-link:hover { text-decoration: underline; }
 
-    .btn {
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    }
-
-    /* Modal modern */
+    /* ===== MODAL ===== */
     #detailModal .modal-content {
       border-radius: 1rem;
       overflow: hidden;
@@ -92,24 +102,7 @@ $remaja = mysqli_query($conn, "SELECT id, nama, email, alamat, no_hp, status_kes
       color: #fff;
       border: none;
     }
-    #detailModal .modal-body {
-      background-color: #f4f6f8;
-    }
-    #detailModal .detail-box {
-      background: #fff;
-      border-radius: 10px;
-      padding: 20px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.05);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    #detailModal .detail-box:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-    }
-    #detailModal h6 {
-      font-weight: 600;
-      color: #555;
-    }
+    #detailModal .modal-body { background-color: #f4f6f8; }
   </style>
 </head>
 <body>
@@ -121,8 +114,21 @@ $remaja = mysqli_query($conn, "SELECT id, nama, email, alamat, no_hp, status_kes
     <p class="mb-0">Mari bantu pemantauan kesehatan remaja melalui Posyandu.</p>
   </div>
 
+  <!-- Grafik Status Kesehatan -->
+  <div class="container my-5">
+    <div class="chart-card">
+      <h5 class="text-center mb-3">🩸 Status Kesehatan Darah Remaja</h5>
+      <div class="chart-container">
+        <canvas id="chartKesehatan"></canvas>
+      </div>
+      <small class="text-muted">
+        Distribusi kondisi darah remaja berdasarkan data kesehatan terakhir.
+      </small>
+    </div>
+  </div>
+
   <!-- Konten Dashboard -->
-  <div class="container py-5">
+  <div class="container pb-5">
     <div class="card p-3 mt-3 shadow-sm dashboard-card">
       <h4 class="mb-3 text-primary fw-bold">📋 Daftar Remaja Terbaru</h4>
       <table class="table table-striped align-middle">
@@ -165,7 +171,7 @@ $remaja = mysqli_query($conn, "SELECT id, nama, email, alamat, no_hp, status_kes
     </div>
   </div>
 
-  <!-- Modal Detail Remaja (Modern) -->
+  <!-- Modal Detail -->
   <div class="modal fade" id="detailModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -175,49 +181,58 @@ $remaja = mysqli_query($conn, "SELECT id, nama, email, alamat, no_hp, status_kes
         </div>
         <div class="modal-body p-4">
           <div class="detail-box">
-            <div class="mb-3">
-              <h6><i class="bi bi-person-fill text-success me-2"></i>Nama</h6>
-              <p class="mb-0 fs-6 fw-semibold text-dark" id="modalNama"></p>
-            </div>
+            <h6><i class="bi bi-person-fill text-success me-2"></i>Nama</h6>
+            <p id="modalNama" class="fw-semibold"></p>
             <hr>
-            <div class="mb-3">
-              <h6><i class="bi bi-geo-alt-fill text-danger me-2"></i>Alamat</h6>
-              <p class="mb-0 fs-6 fw-semibold text-dark" id="modalAlamat"></p>
-            </div>
+            <h6><i class="bi bi-geo-alt-fill text-danger me-2"></i>Alamat</h6>
+            <p id="modalAlamat" class="fw-semibold"></p>
             <hr>
-            <div>
-              <h6><i class="bi bi-telephone-fill text-primary me-2"></i>No HP</h6>
-              <p class="mb-0 fs-6 fw-semibold text-dark" id="modalHP"></p>
-            </div>
+            <h6><i class="bi bi-telephone-fill text-primary me-2"></i>No HP</h6>
+            <p id="modalHP" class="fw-semibold"></p>
           </div>
-        </div>
-        <div class="modal-footer bg-light border-0">
-          <button type="button" class="btn btn-outline-success px-4" data-bs-dismiss="modal">
-            <i class="bi bi-check-circle me-1"></i> Tutup
-          </button>
         </div>
       </div>
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      // Animasi header dan tabel
+    document.addEventListener('DOMContentLoaded', () => {
+      // animasi
       document.getElementById('heroHeader').classList.add('show');
-      setTimeout(() => document.querySelector('.dashboard-card').classList.add('show'), 300);
+      document.querySelector('.dashboard-card').classList.add('show');
 
-      const rows = document.querySelectorAll('tbody tr');
-      rows.forEach((row, i) => {
-        setTimeout(() => row.classList.add('show-row'), 400 + i * 120);
+      // modal detail
+      document.querySelectorAll('.nama-link').forEach(link => {
+        link.addEventListener('click', e => {
+          e.preventDefault();
+          document.getElementById('modalNama').textContent = link.dataset.nama;
+          document.getElementById('modalAlamat').textContent = link.dataset.alamat || 'Belum diisi';
+          document.getElementById('modalHP').textContent = link.dataset.hp || 'Belum diisi';
+          new bootstrap.Modal(document.getElementById('detailModal')).show();
+        });
       });
 
-      // Event klik nama remaja → tampilkan modal detail
-      $('.nama-link').click(function(e){
-        e.preventDefault();
-        $('#modalNama').text($(this).data('nama'));
-        $('#modalAlamat').text($(this).data('alamat') || 'Belum diisi');
-        $('#modalHP').text($(this).data('hp') || 'Belum diisi');
-        $('#detailModal').modal('show');
+      // grafik kesehatan darah
+      new Chart(document.getElementById('chartKesehatan'), {
+        type: 'pie',
+        data: {
+          labels: ['Anemia', 'Darah Rendah', 'Normal', 'Darah Tinggi'],
+          datasets: [{
+            data: [
+              <?= $stat['anemia'] ?>, 
+              <?= $stat['darah_rendah'] ?>, 
+              <?= $stat['normal'] ?>, 
+              <?= $stat['darah_tinggi'] ?>
+            ],
+            backgroundColor: ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6']
+          }]
+        },
+        options: {
+          plugins: { legend: { position: 'bottom' } },
+          responsive: true,
+          maintainAspectRatio: false
+        }
       });
     });
   </script>
