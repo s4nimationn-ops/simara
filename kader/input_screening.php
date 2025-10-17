@@ -9,13 +9,44 @@ $msg = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user_id = intval($_POST['user_id']);
-    $tekanan = mysqli_real_escape_string($conn, $_POST['tekanan']);
+    $tekanan = trim($_POST['tekanan']);
     $riwayat = mysqli_real_escape_string($conn, $_POST['riwayat']);
     $hb = floatval($_POST['hemoglobin']);
-    $stmt = mysqli_prepare($conn, "INSERT INTO pemeriksaan_kader (user_id,kader_id,tekanan_darah,deskripsi_riwayat,hemoglobin) VALUES (?,?,?,?,?)");
+
+    // --- Simpan ke tabel pemeriksaan_kader ---
+    $stmt = mysqli_prepare($conn, 
+        "INSERT INTO pemeriksaan_kader (user_id, kader_id, tekanan_darah, deskripsi_riwayat, hemoglobin)
+         VALUES (?, ?, ?, ?, ?)"
+    );
     mysqli_stmt_bind_param($stmt, 'iissd', $user_id, $kader_id, $tekanan, $riwayat, $hb);
     mysqli_stmt_execute($stmt);
-    $msg = (mysqli_stmt_affected_rows($stmt) > 0) ? 'Data screening tersimpan.' : 'Gagal menyimpan.';
+
+    if (mysqli_stmt_affected_rows($stmt) > 0) {
+        // --- Tentukan status kesehatan otomatis ---
+        $status = 'Normal';
+
+        // Ambil tekanan sistolik & diastolik (misal 120/80)
+        $sistolik = 0; $diastolik = 0;
+        if (preg_match('/(\d+)\s*\/\s*(\d+)/', $tekanan, $m)) {
+            $sistolik = (int)$m[1];
+            $diastolik = (int)$m[2];
+        }
+
+        if ($hb < 12) {
+            $status = 'Anemia';
+        } elseif ($sistolik >= 130 || $diastolik >= 80) {
+            $status = 'Darah Tinggi';
+        }
+
+        // --- Update kolom status_kesehatan di tabel users ---
+        $update = mysqli_prepare($conn, "UPDATE users SET status_kesehatan=? WHERE id=?");
+        mysqli_stmt_bind_param($update, 'si', $status, $user_id);
+        mysqli_stmt_execute($update);
+
+        $msg = "✅ Data screening tersimpan. Status kesehatan: <strong>$status</strong>";
+    } else {
+        $msg = "❌ Gagal menyimpan data screening.";
+    }
 }
 ?>
 <!doctype html>
@@ -49,7 +80,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       transform: translateY(0);
     }
 
-    /* Card form */
     .form-card {
       max-width: 600px;
       margin: 0 auto;
@@ -84,24 +114,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="container py-5">
   <div class="card p-4 shadow-sm form-card">
     <h4 class="mb-3 text-primary fw-bold">Form Screening</h4>
-    <?php if ($msg): ?><div class="alert alert-info"><?= $msg ?></div><?php endif; ?>
-    <form method="post">
-      <input type="hidden" name="user_id" value="<?= $target ?>">
-      <div class="mb-3">
-        <label class="form-label">Tekanan Darah</label>
-        <input name="tekanan" class="form-control" placeholder="Contoh: 120/80 mmHg" required>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Deskripsi Riwayat Penyakit</label>
-        <textarea name="riwayat" class="form-control" rows="3" placeholder="Masukkan riwayat penyakit (jika ada)"></textarea>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Hemoglobin (g/dL)</label>
-        <input name="hemoglobin" type="number" step="0.1" class="form-control" placeholder="Contoh: 13.5">
-      </div>
-      <button class="btn btn-primary">Simpan</button>
-      <a class="btn btn-secondary" href="dashboard.php">Kembali</a>
-    </form>
+
+    <?php if ($msg): ?>
+      <div class="alert alert-info"><?= $msg ?></div>
+      <a href="dashboard.php" class="btn btn-success mt-2">⬅ Kembali ke Dashboard</a>
+    <?php else: ?>
+      <form method="post">
+        <input type="hidden" name="user_id" value="<?= $target ?>">
+
+        <div class="mb-3">
+          <label class="form-label">Tekanan Darah</label>
+          <input name="tekanan" class="form-control" placeholder="Contoh: 120/80 mmHg" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Deskripsi Riwayat Penyakit</label>
+          <textarea name="riwayat" class="form-control" rows="3" placeholder="Masukkan riwayat penyakit (jika ada)"></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Hemoglobin (g/dL)</label>
+          <input name="hemoglobin" type="number" step="0.1" class="form-control" placeholder="Contoh: 13.5" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Simpan</button>
+        <a class="btn btn-secondary" href="dashboard.php">Kembali</a>
+      </form>
+    <?php endif; ?>
   </div>
 </div>
 
@@ -111,6 +150,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     setTimeout(() => document.querySelector('.form-card').classList.add('show'), 300);
   });
 </script>
-
 </body>
 </html>
