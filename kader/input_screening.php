@@ -22,26 +22,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     mysqli_stmt_execute($stmt);
 
     if (mysqli_stmt_affected_rows($stmt) > 0) {
-        // --- Tentukan status kesehatan otomatis ---
-        $status = 'Normal';
 
-        // Ambil tekanan sistolik & diastolik (misal 120/80)
-        $sistolik = 0; $diastolik = 0;
-        if (preg_match('/(\d+)\s*\/\s*(\d+)/', $tekanan, $m)) {
-            $sistolik = (int)$m[1];
-            $diastolik = (int)$m[2];
-        }
+// --- Tentukan status kesehatan otomatis ---
+$status_list = []; // pastikan array kosong
 
-        if ($hb < 12) {
-            $status = 'Anemia';
-        } elseif ($sistolik >= 130 || $diastolik >= 80) {
-            $status = 'Darah Tinggi';
-        }
+// Pisahkan tekanan darah
+$sistolik = 0;
+$diastolik = 0;
+if (preg_match('/(\d+)\s*\/\s*(\d+)/', $tekanan, $m)) {
+    $sistolik = (int)$m[1];
+    $diastolik = (int)$m[2];
+}
 
-        // --- Update kolom status_kesehatan di tabel users ---
-        $update = mysqli_prepare($conn, "UPDATE users SET status_kesehatan=? WHERE id=?");
-        mysqli_stmt_bind_param($update, 'si', $status, $user_id);
-        mysqli_stmt_execute($update);
+// Cek kondisi berdasarkan tekanan darah & hemoglobin
+if ($hb < 12) {
+    $status_list['anemia'] = 'Anemia';
+}
+if ($sistolik < 90 || $diastolik < 60) {
+    $status_list['darah_rendah'] = 'Darah Rendah';
+}
+if ($sistolik >= 130 || $diastolik >= 80) {
+    $status_list['darah_tinggi'] = 'Darah Tinggi';
+}
+
+// Jika tidak ada kondisi
+if (empty($status_list)) {
+    $status_list['normal'] = 'Normal';
+}
+
+// Gabungkan jadi string
+$status = implode(', ', $status_list);
+
+// --- Update kolom status_kesehatan di tabel users ---
+$update = mysqli_prepare($conn, "UPDATE users SET status_kesehatan=? WHERE id=?");
+mysqli_stmt_bind_param($update, 'si', $status, $user_id);
+mysqli_stmt_execute($update);
+
 
         $msg = "✅ Data screening tersimpan. Status kesehatan: <strong>$status</strong>";
     } else {
@@ -99,6 +115,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .btn-primary:hover {
       background-color: #0056b3;
     }
+
+    .alert-info strong {
+      color: #0d6efd;
+    }
   </style>
 </head>
 <body>
@@ -125,6 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="mb-3">
           <label class="form-label">Tekanan Darah</label>
           <input name="tekanan" class="form-control" placeholder="Contoh: 120/80 mmHg" required>
+          <small class="text-muted">Gunakan format angka seperti 110/70 tanpa satuan.</small>
         </div>
 
         <div class="mb-3">
