@@ -20,19 +20,17 @@ $q_imt_grafik = mysqli_query($conn, "SELECT tanggal_input, status_imt FROM data_
 $imt_labels = [];
 $imt_values = [];
 
-// Mapping status ke angka
-function status_to_number($status) {
-    if ($status == "Kurus") return 1;
-    if ($status == "Normal") return 2;
-    if ($status == "Gemuk") return 3;
-    return 0;
-}
+// ================= DATA IMT UNTUK GRAFIK =================
+$q_imt_grafik = mysqli_query($conn, "SELECT tanggal_input, hasil_imt FROM data_imt WHERE user_id='$user_id' ORDER BY tanggal_input ASC");
+$imt_labels = [];
+$imt_values = [];
 
 while ($row = mysqli_fetch_assoc($q_imt_grafik)) {
     $imt_labels[] = date('d/m/Y', strtotime($row['tanggal_input']));
-    $imt_values[] = status_to_number($row['status_imt']);
+    $imt_values[] = (float)$row['hasil_imt'];
 }
 $total_data_imt = count($imt_values);
+
 
 // ================= Pola Makan =================
 $q_pola = mysqli_query($conn, "SELECT * FROM data_pola_makan WHERE user_id='$user_id' ORDER BY tanggal_input DESC LIMIT 1");
@@ -50,18 +48,31 @@ $gadget = $aktivitas['gadget_jam_per_hari'] ?? '-';
 
 // ================= TTD =================
 $q_ttd = mysqli_query($conn, "
-  SELECT tanggal_pemberian 
+  SELECT tanggal_pemberian, tanggal_minum_terakhir 
   FROM pemberian_suplemen 
   WHERE user_id = '$user_id' AND tablet_tambah_darah = 1 
   ORDER BY tanggal_pemberian DESC 
   LIMIT 1
 ");
 if (!$q_ttd) die("Query TTD gagal: " . mysqli_error($conn));
+
 $ttd = mysqli_fetch_assoc($q_ttd);
-$terakhir_ttd = $ttd ? new DateTime($ttd['tanggal_pemberian']) : null;
+$terakhir_pemberian = $ttd ? new DateTime($ttd['tanggal_pemberian']) : null;
+$terakhir_minum     = !empty($ttd['tanggal_minum_terakhir']) ? new DateTime($ttd['tanggal_minum_terakhir']) : null;
 $hari_ini = new DateTime();
-if ($terakhir_ttd) $terakhir_ttd->modify('-8 days'); // simulasi
-$selisih_hari = $terakhir_ttd ? $hari_ini->diff($terakhir_ttd)->days : null;
+
+$selisih_hari = $terakhir_pemberian ? $hari_ini->diff($terakhir_pemberian)->days : null;
+
+// Tampilkan notifikasi hanya jika sudah 7 hari sejak pemberian
+// dan belum ditekan tombol "sudah minum" dalam 7 hari terakhir
+$tampilkan_notifikasi = false;
+if ($terakhir_pemberian) {
+    if ($selisih_hari >= 7) {
+        if (!$terakhir_minum || $hari_ini->diff($terakhir_minum)->days >= 7) {
+            $tampilkan_notifikasi = true;
+        }
+    }
+}
 
 // ================= GAD-7 =================
 $q_gad = mysqli_query($conn, "SELECT * FROM data_gad7 WHERE user_id='$user_id' ORDER BY tanggal_input DESC, id DESC LIMIT 1");
@@ -161,19 +172,37 @@ body { background: #f9fafb; font-family: 'Poppins', sans-serif; }
 </div>
 
 <!-- Alert TTD -->
-<?php if (!$terakhir_ttd || $selisih_hari >= 7): ?>
+<?php if ($tampilkan_notifikasi): ?>
 <div class="container mt-4">
-  <div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert">
-    <div class="d-flex align-items-center">
-      <i class="bi bi-capsule me-2 fs-5"></i>
+  <div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert" id="alertTTD">
+    <div class="d-flex justify-content-between align-items-center">
       <div>
-        <strong>Pengingat:</strong> Sudah <?= $selisih_hari ?? 'beberapa'; ?> hari sejak terakhir minum <strong>Tablet Tambah Darah</strong>.<br>
+        <i class="bi bi-capsule me-2 fs-5"></i>
+        <strong>Pengingat:</strong> Sudah <?= $selisih_hari ?? 'beberapa'; ?> hari sejak terakhir minum 
+        <strong>Tablet Tambah Darah</strong>.<br>
         Jangan lupa diminum hari ini ya! 💊
       </div>
+      <button class="btn btn-sm btn-primary ms-3" id="btnSudahMinum">Saya sudah minum</button>
     </div>
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
   </div>
 </div>
+
+<script>
+document.getElementById('btnSudahMinum').addEventListener('click', function() {
+  fetch('update_ttd.php', { method: 'POST' })
+    .then(res => res.text())
+    .then(res => {
+      if (res.trim() === 'OK') {
+        const alertBox = document.getElementById('alertTTD');
+        alertBox.classList.remove('show');
+        setTimeout(() => alertBox.remove(), 500);
+      } else {
+        alert('Gagal memperbarui status: ' + res);
+      }
+    })
+    .catch(err => alert('Terjadi kesalahan: ' + err));
+});
+</script>
 <?php endif; ?>
 
 <!-- Box Inputan -->
@@ -256,44 +285,66 @@ body { background: #f9fafb; font-family: 'Poppins', sans-serif; }
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <?php if ($total_data_imt > 0): ?>
 <script>
-const kategoriMap = {
-    1: 'Kurus',
-    2: 'Normal',
-    3: 'Gemuk'
-};
 const labels = <?= json_encode($imt_labels) ?>;
 const values = <?= json_encode($imt_values) ?>;
 const ctx = document.getElementById('imtLineChart').getContext('2d');
+
+// Hitung min dan max nilai Y agar grafik dinamis
+const minValue = Math.min(...values);
+const maxValue = Math.max(...values);
+const padding = 1;
+const yMin = Math.floor(minValue - padding);
+const yMax = Math.ceil(maxValue + padding);
 
 new Chart(ctx, {
   type: 'line',
   data: {
     labels: labels,
-    datasets: [{
-      label: 'Kategori IMT',
-      data: values,
-      borderColor: '#2563eb',
-      backgroundColor: 'rgba(37, 99, 235, 0.2)',
-      borderWidth: 3,
-      tension: 0.3,
-      fill: true,
-      pointRadius: 6,
-      pointBackgroundColor: '#2563eb'
-    }]
+    datasets: [
+      {
+        label: 'Nilai IMT',
+        data: values,
+        borderColor: '#2563eb',
+        backgroundColor: 'rgba(37, 99, 235, 0.2)',
+        borderWidth: 3,
+        tension: 0.3,
+        fill: true,
+        pointRadius: 6,
+        pointBackgroundColor: '#2563eb'
+      },
+      {
+        label: 'Batas Normal Bawah (18.5)',
+        data: Array(values.length).fill(18.5),
+        borderColor: 'green',
+        borderWidth: 2,
+        borderDash: [6, 6],
+        pointRadius: 0,
+        fill: false
+      },
+      {
+        label: 'Batas Normal Atas (24.9)',
+        data: Array(values.length).fill(24.9),
+        borderColor: 'red',
+        borderWidth: 2,
+        borderDash: [6, 6],
+        pointRadius: 0,
+        fill: false
+      }
+    ]
   },
   options: {
     responsive: true,
     scales: {
       y: {
-        min: 1,
-        max: 3,
+        suggestedMin: yMin,
+        suggestedMax: yMax,
         ticks: {
           stepSize: 1,
           callback: function(value) {
-            return kategoriMap[value] || '';
+            return value.toFixed(1);
           }
         },
-        title: { display: true, text: 'Kategori IMT' }
+        title: { display: true, text: 'Nilai IMT' }
       },
       x: {
         title: { display: true, text: 'Tanggal Input' }
@@ -303,15 +354,16 @@ new Chart(ctx, {
       tooltip: {
         callbacks: {
           label: function(context) {
-            return 'Kategori: ' + kategoriMap[context.parsed.y];
+            return 'IMT: ' + context.parsed.y.toFixed(1);
           }
         }
       },
-      legend: { display: false }
+      legend: { display: true }
     }
   }
 });
 </script>
 <?php endif; ?>
+
 </body>
 </html>

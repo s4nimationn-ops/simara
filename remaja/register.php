@@ -6,13 +6,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nama = mysqli_real_escape_string($conn, $_POST['nama']);
     $email = mysqli_real_escape_string($conn, $_POST['email']);
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    $no_hp = mysqli_real_escape_string($conn, $_POST['no_hp']); // ✅ Tambahan no_hp
+    $alamat = mysqli_real_escape_string($conn, $_POST['alamat']); // ✅ Tambahan alamat
     $kecamatan_id = intval($_POST['kecamatan_id']);
     $kelurahan_id = intval($_POST['kelurahan_id']);
     $sekolah_id = intval($_POST['sekolah_id']);
 
-    // simpan ke tabel users
-    $query = "INSERT INTO users (nama, email, password, role, kecamatan_id, kelurahan_id, sekolah_id)
-              VALUES ('$nama', '$email', '$password', 'remaja', '$kecamatan_id', '$kelurahan_id', '$sekolah_id')";
+    // simpan ke tabel users (pastikan tabel punya kolom no_hp dan alamat)
+    $query = "INSERT INTO users (nama, email, password, role, no_hp, alamat, kecamatan_id, kelurahan_id, sekolah_id)
+              VALUES ('$nama', '$email', '$password', 'remaja', '$no_hp', '$alamat', '$kecamatan_id', '$kelurahan_id', '$sekolah_id')";
 
     if (mysqli_query($conn, $query)) {
         $_SESSION['success'] = 'Registrasi berhasil! Silakan login.';
@@ -20,19 +22,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     } else {
         $error = "Terjadi kesalahan: " . mysqli_error($conn);
-        $q = mysqli_query($conn, "SELECT id FROM users WHERE email='$email'");
-        if (mysqli_num_rows($q) > 0) {
-            $err = 'Email sudah digunakan.';
-        } else {
-            $hash = password_hash($password, PASSWORD_DEFAULT);
-            $ins = mysqli_query($conn, "INSERT INTO users (nama,no_hp,email,password,role) VALUES ('$nama', '$no_hp','$email','$hash','remaja')");
-            if ($ins) {
-                echo "<script>alert('Registrasi berhasil. Silakan login.');location.href='login.php';</script>"; 
-                exit;
-            } else {
-                $err = 'Gagal registrasi.';
-            }
-        }
     }
 }
 
@@ -59,6 +48,9 @@ $q_kecamatan = mysqli_query($conn, "SELECT * FROM kecamatan ORDER BY nama_kecama
       border-radius: 15px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
+    .form-label {
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -74,22 +66,32 @@ $q_kecamatan = mysqli_query($conn, "SELECT * FROM kecamatan ORDER BY nama_kecama
 
         <form method="POST">
           <div class="mb-3">
-            <label class="form-label fw-semibold">Nama Lengkap</label>
+            <label class="form-label">Nama Lengkap</label>
             <input type="text" name="nama" class="form-control" required>
           </div>
 
           <div class="mb-3">
-            <label class="form-label fw-semibold">Email</label>
+            <label class="form-label">Email</label>
             <input type="email" name="email" class="form-control" required>
           </div>
 
           <div class="mb-3">
-            <label class="form-label fw-semibold">Password</label>
+            <label class="form-label">Password</label>
             <input type="password" name="password" class="form-control" required>
           </div>
 
           <div class="mb-3">
-            <label class="form-label fw-semibold">Kecamatan</label>
+            <label class="form-label">No. HP</label>
+            <input type="text" name="no_hp" class="form-control" placeholder="08xxxxxxxxxx" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Alamat Lengkap</label>
+            <textarea name="alamat" class="form-control" rows="3" placeholder="Contoh: Jl. Melati No.10, RT 02/RW 05, Beji" required></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Kecamatan</label>
             <select id="kecamatan" name="kecamatan_id" class="form-select" required>
               <option value="">-- Pilih Kecamatan --</option>
               <?php while ($k = mysqli_fetch_assoc($q_kecamatan)): ?>
@@ -99,14 +101,14 @@ $q_kecamatan = mysqli_query($conn, "SELECT * FROM kecamatan ORDER BY nama_kecama
           </div>
 
           <div class="mb-3">
-            <label class="form-label fw-semibold">Kelurahan</label>
+            <label class="form-label">Kelurahan</label>
             <select id="kelurahan" name="kelurahan_id" class="form-select" required>
               <option value="">-- Pilih Kelurahan --</option>
             </select>
           </div>
 
           <div class="mb-3">
-            <label class="form-label fw-semibold">Sekolah</label>
+            <label class="form-label">Sekolah</label>
             <select id="sekolah" name="sekolah_id" class="form-select" required>
               <option value="">-- Pilih Sekolah --</option>
             </select>
@@ -120,7 +122,6 @@ $q_kecamatan = mysqli_query($conn, "SELECT * FROM kecamatan ORDER BY nama_kecama
   </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(document).ready(function() {
 
