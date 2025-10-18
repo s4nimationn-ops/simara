@@ -48,7 +48,7 @@ $gadget = $aktivitas['gadget_jam_per_hari'] ?? '-';
 
 // ================= TTD =================
 $q_ttd = mysqli_query($conn, "
-  SELECT tanggal_pemberian, tanggal_minum_terakhir 
+  SELECT id, tanggal_pemberian, tanggal_minum_terakhir 
   FROM pemberian_suplemen 
   WHERE user_id = '$user_id' AND tablet_tambah_darah = 1 
   ORDER BY tanggal_pemberian DESC 
@@ -57,22 +57,33 @@ $q_ttd = mysqli_query($conn, "
 if (!$q_ttd) die("Query TTD gagal: " . mysqli_error($conn));
 
 $ttd = mysqli_fetch_assoc($q_ttd);
-$terakhir_pemberian = $ttd ? new DateTime($ttd['tanggal_pemberian']) : null;
-$terakhir_minum     = !empty($ttd['tanggal_minum_terakhir']) ? new DateTime($ttd['tanggal_minum_terakhir']) : null;
 $hari_ini = new DateTime();
-
-$selisih_hari = $terakhir_pemberian ? $hari_ini->diff($terakhir_pemberian)->days : null;
-
-// Tampilkan notifikasi hanya jika sudah 7 hari sejak pemberian
-// dan belum ditekan tombol "sudah minum" dalam 7 hari terakhir
 $tampilkan_notifikasi = false;
-if ($terakhir_pemberian) {
-    if ($selisih_hari >= 7) {
-        if (!$terakhir_minum || $hari_ini->diff($terakhir_minum)->days >= 7) {
+$pesan_notif = "";
+
+// 🆕 Jika remaja baru (belum ada data sama sekali)
+if (!$ttd) {
+    $tampilkan_notifikasi = true;
+    $pesan_notif = "Kamu belum pernah minum tablet tambah darah. Yuk mulai hari ini! 💊";
+} else {
+    // 👩‍🦱 Remaja lama
+    $terakhir_minum = !empty($ttd['tanggal_minum_terakhir']) ? new DateTime($ttd['tanggal_minum_terakhir']) : null;
+
+    if ($terakhir_minum) {
+        $selisih_hari = $hari_ini->diff($terakhir_minum)->days;
+
+        // Tampilkan notifikasi hanya jika sudah 7 hari atau lebih
+        if ($selisih_hari >= 7) {
             $tampilkan_notifikasi = true;
+            $pesan_notif = "Sudah $selisih_hari hari sejak terakhir kamu minum tablet tambah darah. Saatnya minum lagi hari ini! 💊";
         }
+    } else {
+        // Jika kolom tanggal_minum_terakhir masih kosong
+        $tampilkan_notifikasi = true;
+        $pesan_notif = "Belum ada data minum tablet. Jangan lupa mulai hari ini ya! 💊";
     }
 }
+
 
 // ================= GAD-7 =================
 $q_gad = mysqli_query($conn, "SELECT * FROM data_gad7 WHERE user_id='$user_id' ORDER BY tanggal_input DESC, id DESC LIMIT 1");
@@ -178,9 +189,8 @@ body { background: #f9fafb; font-family: 'Poppins', sans-serif; }
     <div class="d-flex justify-content-between align-items-center">
       <div>
         <i class="bi bi-capsule me-2 fs-5"></i>
-        <strong>Pengingat:</strong> Sudah <?= $selisih_hari ?? 'beberapa'; ?> hari sejak terakhir minum 
-        <strong>Tablet Tambah Darah</strong>.<br>
-        Jangan lupa diminum hari ini ya! 💊
+        <strong>Pengingat Tablet Tambah Darah</strong><br>
+        <?= htmlspecialchars($pesan_notif); ?>
       </div>
       <button class="btn btn-sm btn-primary ms-3" id="btnSudahMinum">Saya sudah minum</button>
     </div>
@@ -204,6 +214,7 @@ document.getElementById('btnSudahMinum').addEventListener('click', function() {
 });
 </script>
 <?php endif; ?>
+
 
 <!-- Box Inputan -->
 <div class="container mt-4">
