@@ -23,6 +23,9 @@
           <a class="nav-link" href="admin_input.php">Input Artikel</a>
         </li>
         <li class="nav-item">
+          <a class="nav-link" href="admin_artikel_rekomendasi.php">Input Artikel Rekomendasi</a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link" href="kelola_kecamatan.php">Kecamatan</a>
         </li>
         <li class="nav-item">

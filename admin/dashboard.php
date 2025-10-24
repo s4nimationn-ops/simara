@@ -94,14 +94,14 @@ $gad = mysqli_fetch_assoc($q_gad);
       padding: 25px;
       background: #fff;
       margin-bottom: 30px;
-      height: 350px; /* semua grafik sama tinggi */
+      height: 350px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
     }
 
     .chart-card canvas {
-      max-height: 250px !important; /* kontrol tinggi grafik */
+      max-height: 250px !important;
     }
 
     small.text-muted {

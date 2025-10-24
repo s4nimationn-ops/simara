@@ -31,6 +31,36 @@ while ($row = mysqli_fetch_assoc($q_imt_grafik)) {
 }
 $total_data_imt = count($imt_values);
 
+// ==================== REKOMENDASI ARTIKEL BERDASARKAN IMT ====================
+$artikel_rekomendasi = null;
+$kategori = null;
+
+if ($imt_value != '-' && is_numeric($imt_value)) {
+    // Tentukan kategori IMT sesuai standar WHO
+    if ($imt_value < 18.5) {
+        $kategori = 'Kurus';
+    } elseif ($imt_value >= 18.5 && $imt_value < 25) {
+        $kategori = 'Normal';
+    } elseif ($imt_value >= 25 && $imt_value < 30) {
+        $kategori = 'Gemuk';
+    } else {
+        $kategori = 'Obesitas';
+    }
+
+    // Ambil artikel rekomendasi untuk kategori tersebut
+    $stmt = $conn->prepare("SELECT * FROM artikel WHERE kategori_rekomendasi = ? ORDER BY tanggal DESC LIMIT 1");
+    $stmt->bind_param("s", $kategori);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result && $result->num_rows > 0) {
+        $artikel_rekomendasi = $result->fetch_assoc();
+    }
+
+    $stmt->close();
+}
+
+
 
 // ================= Pola Makan =================
 $q_pola = mysqli_query($conn, "SELECT * FROM data_pola_makan WHERE user_id='$user_id' ORDER BY tanggal_input DESC LIMIT 1");
@@ -109,8 +139,28 @@ if ($gad) {
 }
 
 // ================= Artikel =================
-$q_artikel = mysqli_query($conn, "SELECT * FROM artikel ORDER BY tanggal DESC");
+// Ambil hanya artikel umum (bukan artikel rekomendasi)
+if (!empty($kategori)) {
+    // Jika user sudah punya hasil IMT, tampilkan hanya artikel yang bukan rekomendasi
+    $q_artikel = mysqli_query($conn, "
+        SELECT * FROM artikel 
+        WHERE kategori_rekomendasi IS NULL 
+           OR kategori_rekomendasi = ''
+        ORDER BY tanggal DESC
+    ");
+} else {
+    // Jika belum pernah input IMT, tampilkan juga semua artikel umum saja
+    $q_artikel = mysqli_query($conn, "
+        SELECT * FROM artikel 
+        WHERE kategori_rekomendasi IS NULL 
+           OR kategori_rekomendasi = ''
+        ORDER BY tanggal DESC
+    ");
+}
+
+
 if (!$q_artikel) die("Query artikel gagal: " . mysqli_error($conn));
+
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -259,28 +309,46 @@ document.getElementById('btnSudahMinum').addEventListener('click', function() {
 </div>
 <?php endif; ?>
 
-<!-- Artikel -->
+<!-- ✅ ARTIKEL REKOMENDASI BERDASARKAN IMT -->
+<?php if ($artikel_rekomendasi): ?>
 <div class="container mt-5">
-  <h4 class="mb-4 fw-bold text-primary">📚 Artikel</h4>
+  <h4 class="fw-bold text-primary mb-4">🩺 Rekomendasi Untukmu</h4>
+  <div class="card border-0 shadow-sm">
+    <?php if (!empty($artikel_rekomendasi['poster'])): ?>
+      <img src="../uploads/<?= htmlspecialchars($artikel_rekomendasi['poster']); ?>" class="card-img-top" style="height: 250px; object-fit: cover;">
+    <?php endif; ?>
+    <div class="card-body">
+      <h5><?= htmlspecialchars($artikel_rekomendasi['judul']); ?></h5>
+      <p class="text-muted"><?= nl2br(substr(strip_tags($artikel_rekomendasi['konten']), 0, 250)); ?>...</p>
+      <?php if (!empty($artikel_rekomendasi['video'])): ?>
+      <div class="ratio ratio-16x9 mb-3">
+        <iframe src="<?= htmlspecialchars($artikel_rekomendasi['video']); ?>" frameborder="0" allowfullscreen></iframe>
+      </div>
+      <?php endif; ?>
+      <a href="artikel_detail.php?id=<?= $artikel_rekomendasi['id']; ?>" class="btn btn-primary">Baca Selengkapnya</a>
+    </div>
+  </div>
+</div>
+<?php elseif ($imt_value != '-'): ?>
+<div class="container mt-5">
+  <div class="alert alert-secondary">Belum ada artikel rekomendasi untuk kategori IMT kamu (<?= htmlspecialchars($imt_status); ?>).</div>
+</div>
+<?php endif; ?>
+
+<!-- ✅ ARTIKEL UMUM -->
+<div class="container mt-5">
+  <h4 class="fw-bold text-primary mb-4">📚 Artikel Lainnya</h4>
   <div class="row g-4">
     <?php if (mysqli_num_rows($q_artikel) > 0): ?>
       <?php while ($artikel = mysqli_fetch_assoc($q_artikel)): ?>
         <div class="col-md-4">
           <div class="card h-100 shadow-sm">
             <?php if (!empty($artikel['poster'])): ?>
-              <img src="../uploads/<?= htmlspecialchars($artikel['poster']); ?>" 
-                   class="card-img-top" 
-                   alt="Poster Artikel" 
-                   style="height: 200px; object-fit: cover;">
+              <img src="../uploads/<?= htmlspecialchars($artikel['poster']); ?>" class="card-img-top" style="height:200px;object-fit:cover;">
             <?php endif; ?>
             <div class="card-body d-flex flex-column">
-              <h5 class="card-title"><?= htmlspecialchars($artikel['judul']); ?></h5>
-              <p class="card-text text-muted"><?= substr(strip_tags($artikel['konten']), 0, 100); ?>...</p>
-              <?php if (!empty($artikel['video'])): ?>
-                <div class="ratio ratio-16x9 mb-3">
-                  <iframe src="<?= htmlspecialchars($artikel['video']); ?>" frameborder="0" allowfullscreen></iframe>
-                </div>
-              <?php endif; ?>
+              <h5><?= htmlspecialchars($artikel['judul']); ?></h5>
+              <p class="text-muted"><?= substr(strip_tags($artikel['konten']), 0, 100); ?>...</p>
               <a href="artikel_detail.php?id=<?= $artikel['id']; ?>" class="btn btn-outline-primary mt-auto">Baca Selengkapnya</a>
             </div>
           </div>
