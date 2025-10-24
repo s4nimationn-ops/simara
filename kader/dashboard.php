@@ -17,12 +17,29 @@ $q_stat = mysqli_query($conn, "
 ");
 $stat = mysqli_fetch_assoc($q_stat);
 
-// ambil data remaja terbaru
+// Ambil data remaja + nilai & status IMT terbaru
 $remaja = mysqli_query($conn, "
-  SELECT id, nama, email, alamat, no_hp, status_kesehatan 
-  FROM users 
-  WHERE role='remaja' 
-  ORDER BY created_at DESC 
+  SELECT 
+    u.id, 
+    u.nama, 
+    u.email, 
+    u.alamat, 
+    u.no_hp, 
+    u.status_kesehatan,
+    d.hasil_imt,
+    d.status_imt
+  FROM users u
+  LEFT JOIN (
+    SELECT user_id, hasil_imt, status_imt
+    FROM data_imt
+    WHERE (user_id, tanggal_input) IN (
+      SELECT user_id, MAX(tanggal_input)
+      FROM data_imt
+      GROUP BY user_id
+    )
+  ) d ON u.id = d.user_id
+  WHERE u.role='remaja'
+  ORDER BY u.created_at DESC
   LIMIT 20
 ");
 ?>
@@ -136,7 +153,9 @@ $remaja = mysqli_query($conn, "
           <tr>
             <th>Nama</th>
             <th>Email</th>
-            <th>Status</th>
+            <th>Status Kesehatan</th>
+            <th>Nilai IMT</th>
+            <th>Status IMT</th>
             <th width="250">Aksi</th>
           </tr>
         </thead>
@@ -154,6 +173,8 @@ $remaja = mysqli_query($conn, "
             </td>
             <td><?= htmlspecialchars($r['email']) ?></td>
             <td><?= $r['status_kesehatan'] ? htmlspecialchars($r['status_kesehatan']) : '-' ?></td>
+            <td><?= $r['hasil_imt'] ? number_format($r['hasil_imt'], 2) : '-' ?></td>
+            <td><?= $r['status_imt'] ? htmlspecialchars($r['status_imt']) : '-' ?></td>
             <td>
               <div class="d-flex gap-2">
                 <a href="input_antropometri.php?uid=<?= $r['id'] ?>" class="btn btn-sm btn-primary">
@@ -198,11 +219,9 @@ $remaja = mysqli_query($conn, "
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // animasi
       document.getElementById('heroHeader').classList.add('show');
       document.querySelector('.dashboard-card').classList.add('show');
 
-      // modal detail
       document.querySelectorAll('.nama-link').forEach(link => {
         link.addEventListener('click', e => {
           e.preventDefault();
@@ -213,7 +232,6 @@ $remaja = mysqli_query($conn, "
         });
       });
 
-      // grafik kesehatan darah
       new Chart(document.getElementById('chartKesehatan'), {
         type: 'pie',
         data: {
