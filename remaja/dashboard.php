@@ -94,7 +94,7 @@ $pesan_notif = "";
 // ?? Jika remaja baru (belum ada data sama sekali)
 if (!$ttd) {
     $tampilkan_notifikasi = true;
-    $pesan_notif = "Kamu belum pernah minum tablet tambah darah. Yuk mulai hari ini! ??";
+    $pesan_notif = "Kamu belum pernah minum tablet tambah darah. Yuk mulai hari ini!";
 } else {
     // ????? Remaja lama
     $terakhir_minum = !empty($ttd['tanggal_minum_terakhir']) ? new DateTime($ttd['tanggal_minum_terakhir']) : null;
@@ -105,12 +105,12 @@ if (!$ttd) {
         // Tampilkan notifikasi hanya jika sudah 7 hari atau lebih
         if ($selisih_hari >= 7) {
             $tampilkan_notifikasi = true;
-            $pesan_notif = "Sudah $selisih_hari hari sejak terakhir kamu minum tablet tambah darah. Saatnya minum lagi hari ini! ??";
+            $pesan_notif = "Sudah $selisih_hari hari sejak terakhir kamu minum tablet tambah darah. Saatnya minum lagi hari ini!";
         }
     } else {
         // Jika kolom tanggal_minum_terakhir masih kosong
         $tampilkan_notifikasi = true;
-        $pesan_notif = "Belum ada data minum tablet. Jangan lupa mulai hari ini ya! ??";
+        $pesan_notif = "Belum ada data minum tablet. Jangan lupa mulai hari ini ya!";
     }
 }
 
