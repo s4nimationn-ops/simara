@@ -299,20 +299,10 @@ document.getElementById('btnSudahMinum').addEventListener('click', function() {
   </div>
 </div>
 
-<!-- Grafik Garis IMT -->
-<?php if ($total_data_imt > 0): ?>
-<div class="container mt-5">
-  <h4 class="mb-4 fw-bold text-primary text-center">Grafik Kategori IMT Kamu</h4>
-  <div class="card p-4 shadow-sm chart-container">
-    <canvas id="imtLineChart"></canvas>
-  </div>
-</div>
-<?php endif; ?>
-
 <!-- ? ARTIKEL REKOMENDASI BERDASARKAN IMT -->
 <?php if ($artikel_rekomendasi): ?>
 <div class="container mt-5">
-  <h4 class="fw-bold text-primary mb-4">Rekomendasi Untukmu</h4>
+  <h4 class="fw-bold text-primary text-center mb-4">Rekomendasi Untukmu</h4>
 
   <div class="p-4 rounded-4 shadow-sm" style="background: #fff9e6; border: 1px solid #ffe9b5;">
     <div class="d-flex align-items-start gap-3">
@@ -349,6 +339,18 @@ document.getElementById('btnSudahMinum').addEventListener('click', function() {
 </div>
 <?php endif; ?>
 
+<!-- Grafik Garis IMT -->
+<?php if ($total_data_imt > 0): ?>
+<div class="container mt-5">
+  <h4 class="mb-4 fw-bold text-primary text-center">Grafik Kategori IMT Kamu</h4>
+  <div class="card p-4 shadow-sm chart-container">
+    <canvas id="imtLineChart"></canvas>
+  </div>
+</div>
+<?php endif; ?>
+
+
+
 <!-- ? ARTIKEL UMUM -->
 <div class="container mt-5">
   <h4 class="fw-bold text-primary mb-4">Artikel Lainnya</h4>
@@ -356,7 +358,7 @@ document.getElementById('btnSudahMinum').addEventListener('click', function() {
     <?php if (mysqli_num_rows($q_artikel) > 0): ?>
       <?php while ($artikel = mysqli_fetch_assoc($q_artikel)): ?>
         <div class="col-md-4">
-          <div class="card h-100 shadow-sm">
+          <div class="card h-100 p-4 shadow-sm">
             <?php if (!empty($artikel['poster'])): ?>
               <img src="../uploads/<?= htmlspecialchars($artikel['poster']); ?>" class="card-img-top" style="height:200px;object-fit:cover;">
             <?php endif; ?>
