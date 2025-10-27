@@ -18,7 +18,8 @@ $q_imt = mysqli_query($conn, "
     ROUND(AVG(hasil_imt),1) AS rata_imt,
     SUM(CASE WHEN status_imt='Kurus' THEN 1 ELSE 0 END) AS kurus,
     SUM(CASE WHEN status_imt='Normal' THEN 1 ELSE 0 END) AS normal,
-    SUM(CASE WHEN status_imt='Gemuk' THEN 1 ELSE 0 END) AS gemuk
+    SUM(CASE WHEN status_imt='Gemuk' THEN 1 ELSE 0 END) AS gemuk,
+    SUM(CASE WHEN status_imt='Obesitas' THEN 1 ELSE 0 END) AS obesitas
   FROM data_imt
 ");
 $imt = mysqli_fetch_assoc($q_imt);
@@ -193,10 +194,10 @@ new Chart(document.getElementById('chartUsers'), {
 new Chart(document.getElementById('chartIMT'), {
   type: 'pie',
   data: {
-    labels: ['Kurus', 'Normal', 'Gemuk'],
+    labels: ['Kurus', 'Normal', 'Gemuk', 'Obesitas'],
     datasets: [{
-      data: [<?= $imt['kurus'] ?>, <?= $imt['normal'] ?>, <?= $imt['gemuk'] ?>],
-      backgroundColor: ['#60a5fa', '#34d399', '#fbbf24']
+      data: [<?= $imt['kurus'] ?>, <?= $imt['normal'] ?>, <?= $imt['gemuk'] ?>, <?= $imt['obesitas'] ?>],
+      backgroundColor: ['#60a5fa', '#34d399', '#fbbf24', '#f46060ff']
     }]
   },
   options: {
