@@ -16,10 +16,12 @@ if ($tinggi > 0) {
         $status_imt = "Kurus";
     } elseif ($hasil_imt >= 18.5 && $hasil_imt < 25) {
         $status_imt = "Normal";
-    } else {
-        // >= 25 ke atas kita anggap Gemuk
+    } elseif ($hasil_imt >= 25 && $hasil_imt < 30) {
         $status_imt = "Gemuk";
+    } else {
+        $status_imt = "Obesitas";
     }
+
 } else {
     $hasil_imt = 0;
     $status_imt = "Tidak valid";
