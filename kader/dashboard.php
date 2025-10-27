@@ -127,14 +127,14 @@ $remaja = mysqli_query($conn, "
 
   <!-- Hero Header -->
   <div class="hero-header" id="heroHeader">
-    <h2 class="fw-bold mb-2">Selamat Datang Kembali, <?= htmlspecialchars($nama) ?> 👋</h2>
+    <h2 class="fw-bold mb-2">Selamat Datang Kembali, <?= htmlspecialchars($nama) ?> </h2>
     <p class="mb-0">Mari bantu pemantauan kesehatan remaja melalui Posyandu.</p>
   </div>
 
   <!-- Grafik Status Kesehatan -->
   <div class="container my-5">
     <div class="chart-card">
-      <h5 class="text-center mb-3">🩸 Status Kesehatan Darah Remaja</h5>
+      <h5 class="text-center mb-3">Status Kesehatan Darah Remaja</h5>
       <div class="chart-container">
         <canvas id="chartKesehatan"></canvas>
       </div>
@@ -147,7 +147,7 @@ $remaja = mysqli_query($conn, "
   <!-- Konten Dashboard -->
   <div class="container pb-5">
     <div class="card p-3 mt-3 shadow-sm dashboard-card">
-      <h4 class="mb-3 text-primary fw-bold">📋 Daftar Remaja Terbaru</h4>
+      <h4 class="mb-3 text-primary fw-bold">Daftar Remaja Terbaru</h4>
       <table class="table table-striped align-middle">
         <thead class="table-success">
           <tr>

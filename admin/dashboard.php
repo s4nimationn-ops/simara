@@ -126,7 +126,7 @@ $gad = mysqli_fetch_assoc($q_gad);
     <!-- === Jumlah Pengguna === -->
     <div class="col-md-6">
       <div class="chart-card">
-        <h5 class="text-center mb-3">📊 Jumlah Pengguna</h5>
+        <h5 class="text-center mb-3">Jumlah Pengguna</h5>
         <canvas id="chartUsers"></canvas>
         <small class="text-muted">Perbandingan antara jumlah remaja dan kader dalam sistem.</small>
       </div>
@@ -135,7 +135,7 @@ $gad = mysqli_fetch_assoc($q_gad);
     <!-- === Grafik IMT === -->
     <div class="col-md-6">
       <div class="chart-card">
-        <h5 class="text-center mb-3">⚖️ Status IMT Remaja</h5>
+        <h5 class="text-center mb-3">Status IMT Remaja</h5>
         <canvas id="chartIMT"></canvas>
         <small class="text-muted">Distribusi status IMT dari seluruh remaja yang sudah mengisi data.</small>
       </div>
@@ -144,7 +144,7 @@ $gad = mysqli_fetch_assoc($q_gad);
     <!-- === Pola Makan === -->
     <div class="col-md-6">
       <div class="chart-card">
-        <h5 class="text-center mb-3">🍎 Pola Makan (Rata-rata)</h5>
+        <h5 class="text-center mb-3">Pola Makan (Rata-rata)</h5>
         <canvas id="chartPola"></canvas>
         <small class="text-muted">Rata-rata frekuensi sarapan, konsumsi buah & sayur, serta asupan air harian.</small>
       </div>
@@ -153,7 +153,7 @@ $gad = mysqli_fetch_assoc($q_gad);
     <!-- === Aktivitas === -->
     <div class="col-md-6">
       <div class="chart-card">
-        <h5 class="text-center mb-3">🏃 Aktivitas Harian</h5>
+        <h5 class="text-center mb-3">Aktivitas Harian</h5>
         <canvas id="chartAktivitas"></canvas>
         <small class="text-muted">Rata-rata jumlah olahraga per minggu dan durasi penggunaan gadget per hari.</small>
       </div>
@@ -162,7 +162,7 @@ $gad = mysqli_fetch_assoc($q_gad);
     <!-- === Mental Health === -->
     <div class="col-md-6 mx-auto">
       <div class="chart-card">
-        <h5 class="text-center mb-3">🧠 Kondisi Mental Remaja</h5>
+        <h5 class="text-center mb-3">Kondisi Mental Remaja</h5>
         <canvas id="chartMental"></canvas>
         <small class="text-muted">Klasifikasi tingkat kecemasan dari hasil skrining seluruh remaja.</small>
       </div>

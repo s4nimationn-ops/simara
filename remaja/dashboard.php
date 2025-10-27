@@ -91,12 +91,12 @@ $hari_ini = new DateTime();
 $tampilkan_notifikasi = false;
 $pesan_notif = "";
 
-// 🆕 Jika remaja baru (belum ada data sama sekali)
+// ?? Jika remaja baru (belum ada data sama sekali)
 if (!$ttd) {
     $tampilkan_notifikasi = true;
-    $pesan_notif = "Kamu belum pernah minum tablet tambah darah. Yuk mulai hari ini! 💊";
+    $pesan_notif = "Kamu belum pernah minum tablet tambah darah. Yuk mulai hari ini! ??";
 } else {
-    // 👩‍🦱 Remaja lama
+    // ????? Remaja lama
     $terakhir_minum = !empty($ttd['tanggal_minum_terakhir']) ? new DateTime($ttd['tanggal_minum_terakhir']) : null;
 
     if ($terakhir_minum) {
@@ -105,12 +105,12 @@ if (!$ttd) {
         // Tampilkan notifikasi hanya jika sudah 7 hari atau lebih
         if ($selisih_hari >= 7) {
             $tampilkan_notifikasi = true;
-            $pesan_notif = "Sudah $selisih_hari hari sejak terakhir kamu minum tablet tambah darah. Saatnya minum lagi hari ini! 💊";
+            $pesan_notif = "Sudah $selisih_hari hari sejak terakhir kamu minum tablet tambah darah. Saatnya minum lagi hari ini! ??";
         }
     } else {
         // Jika kolom tanggal_minum_terakhir masih kosong
         $tampilkan_notifikasi = true;
-        $pesan_notif = "Belum ada data minum tablet. Jangan lupa mulai hari ini ya! 💊";
+        $pesan_notif = "Belum ada data minum tablet. Jangan lupa mulai hari ini ya! ??";
     }
 }
 
@@ -210,21 +210,21 @@ body { background: #f9fafb; font-family: 'Poppins', sans-serif; }
 <!-- Header -->
 <div class="container my-4">
   <div class="header-box text-center">
-    <h4>Halo, <?= htmlspecialchars($nama); ?> 👋</h4>
+    <h4>Halo, <?= htmlspecialchars($nama); ?> </h4>
     <p class="mb-0">Berikut ringkasan kesehatan terakhirmu</p>
 
     <!-- Screening GAD-7 -->
     <div class="gad-box mt-3">
       <div class="d-flex justify-content-between align-items-center flex-wrap">
         <div>
-          <h5>🧠 Screening Kesehatan Mental</h5>
+          <h5>Screening Kesehatan Mental</h5>
           <div class="score">Skor: <?= htmlspecialchars($gad_score); ?> | <?= htmlspecialchars($gad_result); ?></div>
         </div>
         <div>
           <?php if ($boleh_screening): ?>
             <a href="gad7_screening.php" class="btn btn-primary">Mulai Screening</a>
           <?php else: ?>
-            <span class="badge-wait">Tunggu <?= ceil($sisa_waktu); ?> menit lagi ⏳</span>
+            <span class="badge-wait">Tunggu <?= ceil($sisa_waktu); ?> menit lagi ?</span>
           <?php endif; ?>
         </div>
       </div>
@@ -302,42 +302,56 @@ document.getElementById('btnSudahMinum').addEventListener('click', function() {
 <!-- Grafik Garis IMT -->
 <?php if ($total_data_imt > 0): ?>
 <div class="container mt-5">
-  <h4 class="mb-4 fw-bold text-primary text-center">📈 Grafik Kategori IMT Kamu</h4>
+  <h4 class="mb-4 fw-bold text-primary text-center">Grafik Kategori IMT Kamu</h4>
   <div class="card p-4 shadow-sm chart-container">
     <canvas id="imtLineChart"></canvas>
   </div>
 </div>
 <?php endif; ?>
 
-<!-- ✅ ARTIKEL REKOMENDASI BERDASARKAN IMT -->
+<!-- ? ARTIKEL REKOMENDASI BERDASARKAN IMT -->
 <?php if ($artikel_rekomendasi): ?>
 <div class="container mt-5">
-  <h4 class="fw-bold text-primary mb-4">🩺 Rekomendasi Untukmu</h4>
-  <div class="card border-0 shadow-sm">
-    <?php if (!empty($artikel_rekomendasi['poster'])): ?>
-      <img src="../uploads/<?= htmlspecialchars($artikel_rekomendasi['poster']); ?>" class="card-img-top" style="height: 250px; object-fit: cover;">
-    <?php endif; ?>
-    <div class="card-body">
-      <h5><?= htmlspecialchars($artikel_rekomendasi['judul']); ?></h5>
-      <p class="text-muted"><?= nl2br(substr(strip_tags($artikel_rekomendasi['konten']), 0, 250)); ?>...</p>
-      <?php if (!empty($artikel_rekomendasi['video'])): ?>
-      <div class="ratio ratio-16x9 mb-3">
-        <iframe src="<?= htmlspecialchars($artikel_rekomendasi['video']); ?>" frameborder="0" allowfullscreen></iframe>
+  <h4 class="fw-bold text-primary mb-4">Rekomendasi Untukmu</h4>
+
+  <div class="p-4 rounded-4 shadow-sm" style="background: #fff9e6; border: 1px solid #ffe9b5;">
+    <div class="d-flex align-items-start gap-3">
+      <div class="flex-shrink-0">
+        <div class="bg-warning rounded-circle d-flex align-items-center justify-content-center" style="width:55px;height:55px;">
+          <i class="bi bi-lightbulb-fill text-white fs-4"></i>
+        </div>
       </div>
-      <?php endif; ?>
-      <a href="artikel_detail.php?id=<?= $artikel_rekomendasi['id']; ?>" class="btn btn-primary">Baca Selengkapnya</a>
+
+      <div class="flex-grow-1">
+        <?php if (!empty($artikel_rekomendasi['poster'])): ?>
+          <img src="../uploads/<?= htmlspecialchars($artikel_rekomendasi['poster']); ?>" class="rounded-3 mb-3" style="width:100%;max-height:250px;object-fit:cover;">
+        <?php endif; ?>
+
+        <h5 class="fw-semibold"><?= htmlspecialchars($artikel_rekomendasi['judul']); ?></h5>
+        <p class="text-muted mb-3"><?= nl2br(substr(strip_tags($artikel_rekomendasi['konten']), 0, 250)); ?>...</p>
+
+        <?php if (!empty($artikel_rekomendasi['video'])): ?>
+        <div class="ratio ratio-16x9 mb-3">
+          <iframe src="<?= htmlspecialchars($artikel_rekomendasi['video']); ?>" frameborder="0" allowfullscreen></iframe>
+        </div>
+        <?php endif; ?>
+
+        <a href="artikel_detail.php?id=<?= $artikel_rekomendasi['id']; ?>" class="btn btn-warning text-white fw-semibold shadow-sm">
+          Baca Selengkapnya
+        </a>
+      </div>
     </div>
   </div>
 </div>
 <?php elseif ($imt_value != '-'): ?>
 <div class="container mt-5">
-  <div class="alert alert-secondary">Belum ada artikel rekomendasi untuk kategori IMT kamu (<?= htmlspecialchars($imt_status); ?>).</div>
+  <div class="alert alert-secondary shadow-sm">Belum ada artikel rekomendasi untuk kategori IMT kamu (<?= htmlspecialchars($imt_status); ?>).</div>
 </div>
 <?php endif; ?>
 
-<!-- ✅ ARTIKEL UMUM -->
+<!-- ? ARTIKEL UMUM -->
 <div class="container mt-5">
-  <h4 class="fw-bold text-primary mb-4">📚 Artikel Lainnya</h4>
+  <h4 class="fw-bold text-primary mb-4">Artikel Lainnya</h4>
   <div class="row g-4">
     <?php if (mysqli_num_rows($q_artikel) > 0): ?>
       <?php while ($artikel = mysqli_fetch_assoc($q_artikel)): ?>
