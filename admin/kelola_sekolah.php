@@ -128,6 +128,38 @@ $q_kelurahan = mysqli_query($conn, "SELECT * FROM kelurahan ORDER BY nama_kelura
   </div>
 </div>
 
+<!-- Modal Edit -->
+<div class="modal fade" id="modalEdit" tabindex="-1">
+  <div class="modal-dialog">
+    <form method="POST" action="proses_sekolah.php" class="modal-content">
+      <div class="modal-header bg-warning">
+        <h5 class="modal-title">Edit Sekolah</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" name="id" id="edit_id">
+        <div class="mb-3">
+          <label class="form-label">Nama Sekolah</label>
+          <input type="text" name="nama_sekolah" id="edit_nama" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Kelurahan</label>
+          <select name="kelurahan_id" id="edit_kelurahan" class="form-select" required>
+            <option value="">-- Pilih Kelurahan --</option>
+            <?php mysqli_data_seek($q_kelurahan,0); while($kc=mysqli_fetch_assoc($q_kelurahan)): ?>
+              <option value="<?= $kc['id']; ?>"><?= htmlspecialchars($kc['nama_kelurahan']); ?></option>
+            <?php endwhile; ?>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" name="edit" class="btn btn-warning text-white">Perbarui</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
